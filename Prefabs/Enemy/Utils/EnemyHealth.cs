@@ -5,17 +5,14 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private EnemyConstructor enemy;
     [SerializeField] private int maxHealth = 8;
     [SerializeField] private int health = 8;
-    [SerializeField] private GameObject player;
-    [SerializeField] private PlayerAttack playerAttack;
-    [SerializeField] private Player playerScript;
 
 
     private void Start()
     {
         maxHealth = enemy.enemyHealth;
         ResetHP();
-        playerAttack = player.GetComponent<PlayerAttack>();
-        playerScript = player.GetComponent<Player>();
+        //playerAttack = player.GetComponent<PlayerAttack>();
+        //playerScript = player.GetComponent<Player>();
     }
 
     public int RetrieveHP(bool returnHP)
@@ -40,7 +37,7 @@ public class EnemyHealth : MonoBehaviour
     {
         health -= healthLoss;
         Debug.Log("Enemy " + this.name  + " " + health);
-        if (health <= 0)
+        if (health <= 0.0)
         {
             Death();
         }
@@ -54,18 +51,24 @@ public class EnemyHealth : MonoBehaviour
         transform.parent.gameObject.SetActive(true);
     }
     
-    public void Ressurect() {
+    public void Resurrect () {
         gameObject.SetActive(true);
         transform.parent.gameObject.SetActive(true);
-        maxHealth /= 2;
+        maxHealth *= 2/3;
         ResetHP();
     }
 
+    //Makes this enemy lose health when getting punched
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Punch"))
+        Player player;
+        player = other.GetComponentInParent<Player>();
+
+        if (!other.CompareTag("Punch")) { return; }
+
+        if(player != null)
         {
-            LoseHP(playerScript.attackDamage);
+            LoseHP(player.GetDamage());
         }
     }
 }

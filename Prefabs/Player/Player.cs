@@ -389,6 +389,11 @@ public class Player : MonoBehaviour
         }
     }
 
+    public int GetDamage()
+    {
+        return attackDamage;
+    }
+
     public void ChangeThrottle(float degree)
     {
         throttle = degree;

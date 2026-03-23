@@ -15,7 +15,7 @@ public class JunkieBubble : MonoBehaviour
         if (other.CompareTag("Enemy"))
         {
             other.GetComponent("EnemyHealth");
-        }
+        }  
     }
 
         
