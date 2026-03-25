@@ -11,8 +11,6 @@ public class EnemyHealth : MonoBehaviour
     {
         maxHealth = enemy.enemyHealth;
         ResetHP();
-        //playerAttack = player.GetComponent<PlayerAttack>();
-        //playerScript = player.GetComponent<Player>();
     }
 
     public int RetrieveHP(bool returnHP)
@@ -55,7 +53,7 @@ public class EnemyHealth : MonoBehaviour
         gameObject.SetActive(true);
         transform.parent.gameObject.SetActive(true);
         maxHealth *= 2/3;
-        ResetHP();
+        this.ResetHP();
     }
 
     //Makes this enemy lose health when getting punched
@@ -64,10 +62,11 @@ public class EnemyHealth : MonoBehaviour
         Player player;
         player = other.GetComponentInParent<Player>();
 
-        if (!other.CompareTag("Punch")) { return; }
+        if (!other.CompareTag("Punch")) { 
+            return; 
+        }
 
-        if(player != null)
-        {
+        if(player != null) {
             LoseHP(player.GetDamage());
         }
     }
