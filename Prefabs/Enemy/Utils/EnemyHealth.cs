@@ -17,6 +17,8 @@ public class EnemyHealth : MonoBehaviour
     private readonly Dictionary<Collider, ColliderState> colliderStates = new Dictionary<Collider, ColliderState>();
     private readonly Dictionary<Rigidbody, RigidbodyState> rigidbodyStates = new Dictionary<Rigidbody, RigidbodyState>();
 
+    private readonly Dictionary<MeshRenderer, MeshRendererState> meshRendererStates = new Dictionary<MeshRenderer, MeshRendererState>();
+
     private struct ColliderState
     {
         public bool enabled;
@@ -40,6 +42,16 @@ public class EnemyHealth : MonoBehaviour
             this.isKinematic = isKinematic;
             this.useGravity = useGravity;
             this.constraints = constraints;
+        }
+    }
+
+    private struct MeshRendererState
+    {
+        public bool enabled;
+
+        public MeshRendererState(bool enabled)
+        {
+            this.enabled = enabled;
         }
     }
 
@@ -160,6 +172,21 @@ public class EnemyHealth : MonoBehaviour
                 collider.isTrigger = true;
             }
         }
+
+        meshRendererStates.Clear();
+        foreach (MeshRenderer renderer in enemyRoot.GetComponentsInChildren<MeshRenderer>(true))
+        {
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            meshRendererStates[renderer] = new MeshRendererState(renderer.enabled);
+            if (renderer.enabled)
+            {
+                renderer.enabled = false;
+            }
+        }
     }
 
     private void StopEnemyBehaviours()
@@ -212,9 +239,10 @@ public class EnemyHealth : MonoBehaviour
         RestoreRigidbodies();
         RestoreColliders();
         RestoreBehaviours();
+        RestoreMeshRenderers();
 
         isDead = false;
-        maxHealth = Mathf.Max(1, maxHealth * 2 / 3);
+        maxHealth = Mathf.Max(1, maxHealth-=1);
         ResetHP();
     }
 
@@ -279,6 +307,23 @@ public class EnemyHealth : MonoBehaviour
         }
         pausedAgents.Clear();
     }
+
+    private void RestoreMeshRenderers()
+    {
+        foreach (KeyValuePair<MeshRenderer, MeshRendererState> pair in meshRendererStates)
+        {
+            MeshRenderer renderer = pair.Key;
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            MeshRendererState state = pair.Value;
+            renderer.enabled = state.enabled;
+        }
+        meshRendererStates.Clear();
+    }
+
 
     //makes this enemy lose health when getting punched
     private void OnTriggerEnter(Collider other)

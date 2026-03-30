@@ -19,6 +19,11 @@ public class TwisterFire : MonoBehaviour
     private Coroutine attackRoutine;
 
 
+    private void Start()
+    {
+        StartAttackRoutine();
+    }
+
     private void Awake()
     {
         EnsurePlayerReference();
@@ -50,7 +55,6 @@ public class TwisterFire : MonoBehaviour
             return null;
         }
 
-        float distanceToPlayer = 0;
         float closestDistance = 99999;
         int indexOfClosest = 0;
 
