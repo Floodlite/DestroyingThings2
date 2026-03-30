@@ -1,22 +1,26 @@
 using UnityEngine;
-using System.Collections;
 
 public class JunkieBubble : MonoBehaviour
 {
-    private EnemyHealth enemyScript;
-
-    private void Start()
-    {
-        
-    }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Enemy"))
+        if (!other.CompareTag("Enemy"))
         {
-            other.GetComponent("EnemyHealth");
-        }  
-    }
+            return;
+        }
 
-        
+        EnemyHealth enemyHealth = other.GetComponentInParent<EnemyHealth>();
+        if (enemyHealth == null)
+        {
+            enemyHealth = other.GetComponentInChildren<EnemyHealth>(true);
+        }
+
+        if (enemyHealth == null)
+        {
+            return;
+        }
+
+        enemyHealth.Resurrect();
+    }
 }
