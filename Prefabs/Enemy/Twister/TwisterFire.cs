@@ -15,6 +15,8 @@ public class TwisterFire : MonoBehaviour
     [SerializeField] private float minPlayerDistance = 10f;
     [SerializeField] private float maxPlayerDistance = 70f;
     [SerializeField] private float distanceToPlayer;
+    [SerializeField] private Player[] players;
+
 
     
 
@@ -23,6 +25,28 @@ public class TwisterFire : MonoBehaviour
     {
         playerScript = player.GetComponent<Player>();
         StartCoroutine(StartAttacking(attackFreq, projectileSpeed));
+    }
+
+    private Player FindClosestPlayer()
+    {
+        float distanceToPlayer = 0;
+        float closestDistance = 99999;
+        int indexOfClosest = 0;
+
+        //Switch to FindObjectsSortMode.None if performance issues arise
+        players = FindObjectsByType<Player>(FindObjectsSortMode.InstanceID);
+
+        for(int i=0; i<players.Length; i++)
+        {
+            distanceToPlayer = Vector3.Distance(transform.position, players[i].transform.position);
+            
+            if(distanceToPlayer < closestDistance)
+            {
+                closestDistance = distanceToPlayer;
+                indexOfClosest = i;
+            }
+        }
+        return players[indexOfClosest];
     }
 
 
@@ -39,10 +63,8 @@ public class TwisterFire : MonoBehaviour
 
     public void Shoot(float projectileSpeed)
     {
-        playerLocation = player.transform.position - transform.position + new Vector3(0f, 0.5f, 0f);
-        //playerLocation += playerScript.getPlayerMoveDirection() * 2;
+        playerLocation = FindClosestPlayer().transform.position - transform.position + new Vector3(0f, 0.5f, 0f);
         Rigidbody ball;
-        //ball = Instantiate(projectile, transform.position - new Vector3(0f, -0.5f, 0f), transform.rotation); 
         ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 0f), Quaternion.identity, Pooler.PoolType.bullets);
         ball.linearVelocity = transform.TransformDirection(playerLocation * projectileSpeed);
         //Debug.Log("Pew");

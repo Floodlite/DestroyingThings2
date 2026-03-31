@@ -3,20 +3,26 @@ using UnityEngine;
 public class HurtBox : MonoBehaviour
 {
     public EnemyConstructor enemy;
-    public GameObject player;
-    public PlayerHealth playerHealth;
 
-    void Start()
+    private void Start()
     {
-        playerHealth = player.GetComponent<PlayerHealth>();
+        
+    }
+
+    public int GetDamage()
+    {
+        return enemy.enemyDamage;
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
-        {
-            playerHealth.loseHP(enemy.enemyDamage);
-            //Cool idea: If you are moving faster than the enemy, you will only take half the damage
-        }
+        if (!other.CompareTag("Player"))
+            return;
+
+        PlayerHealth playerHealth = other.GetComponentInParent<PlayerHealth>();
+        if (playerHealth == null)
+            return;
+
+        playerHealth.LoseHP(this.GetDamage());
     }
 }

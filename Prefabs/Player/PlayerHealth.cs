@@ -2,31 +2,31 @@ using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
 {
-    [SerializeField] private float maxHealth = 8f;
-    [SerializeField] private float health = 8f;
+    [SerializeField] private int maxHealth = 8;
+    [SerializeField] private int health = 8;
 
     private void Start()
     {
-        resetHP();
+        ResetHP();
     }
 
 
-    private void resetHP()
+    private void ResetHP()
     {
         health = maxHealth;
     }
 
-    public void loseHP(int healthLoss)
+    public void LoseHP(int healthLoss)
     {
         health -= healthLoss;
         Debug.Log("Player " + health);
         if (health <= 0)
         {
-            death();
+            Death();
         }
     }
 
-    public void gainHP(int healthGain)
+    public void GainHP(int healthGain)
     {
         if (health + healthGain > maxHealth)
         {
@@ -39,7 +39,7 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log("Player " + health);
     }
 
-    private void death()
+    private void Death()
     {
         Debug.Log("Failure failure failure");
         Destroy(gameObject);
