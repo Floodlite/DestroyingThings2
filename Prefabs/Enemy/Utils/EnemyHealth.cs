@@ -18,6 +18,7 @@ public class EnemyHealth : MonoBehaviour
     private readonly Dictionary<Rigidbody, RigidbodyState> rigidbodyStates = new Dictionary<Rigidbody, RigidbodyState>();
 
     private readonly Dictionary<MeshRenderer, MeshRendererState> meshRendererStates = new Dictionary<MeshRenderer, MeshRendererState>();
+    private readonly Dictionary<SkinnedMeshRenderer, SkinnedMeshRendererState> skinnedMeshRendererStates = new Dictionary<SkinnedMeshRenderer, SkinnedMeshRendererState>();    
 
     private struct ColliderState
     {
@@ -50,6 +51,16 @@ public class EnemyHealth : MonoBehaviour
         public bool enabled;
 
         public MeshRendererState(bool enabled)
+        {
+            this.enabled = enabled;
+        }
+    }
+
+    private struct SkinnedMeshRendererState
+    {
+        public bool enabled;
+
+        public SkinnedMeshRendererState(bool enabled)
         {
             this.enabled = enabled;
         }
@@ -187,6 +198,21 @@ public class EnemyHealth : MonoBehaviour
                 renderer.enabled = false;
             }
         }
+
+        skinnedMeshRendererStates.Clear();
+        foreach (SkinnedMeshRenderer renderer in enemyRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            skinnedMeshRendererStates[renderer] = new SkinnedMeshRendererState(renderer.enabled);
+            if (renderer.enabled)
+            {
+                renderer.enabled = false;
+            }
+        }
     }
 
     private void StopEnemyBehaviours()
@@ -240,6 +266,7 @@ public class EnemyHealth : MonoBehaviour
         RestoreColliders();
         RestoreBehaviours();
         RestoreMeshRenderers();
+        RestoreSkinnedMeshRenderers();
 
         isDead = false;
         maxHealth = Mathf.Max(1, maxHealth-=1);
@@ -322,6 +349,22 @@ public class EnemyHealth : MonoBehaviour
             renderer.enabled = state.enabled;
         }
         meshRendererStates.Clear();
+    }
+
+    private void RestoreSkinnedMeshRenderers()
+    {
+        foreach (KeyValuePair<SkinnedMeshRenderer, SkinnedMeshRendererState> pair in skinnedMeshRendererStates)
+        {
+            SkinnedMeshRenderer renderer = pair.Key;
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            SkinnedMeshRendererState state = pair.Value;
+            renderer.enabled = state.enabled;
+        }
+        skinnedMeshRendererStates.Clear();
     }
 
 

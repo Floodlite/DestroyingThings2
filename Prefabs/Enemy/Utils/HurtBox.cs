@@ -30,8 +30,9 @@ public class HurtBox : MonoBehaviour
         }
 
         PlayerHealth playerHealth = other.GetComponentInParent<PlayerHealth>();
-        if (playerHealth == null)
+        if (playerHealth == null) {
             return;
+        }
 
         playerHealth.LoseHP(GetDamage());
     }
