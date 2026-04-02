@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7f0ac10f9c97e4d4e9ff4d1d31f74d6b, type: 3}
-  m_Name: Mine
+  m_Name: Firecracker
   m_EditorClassIdentifier: Assembly-CSharp::TrapConstructor
-  name: Landmine
-  trapDamage: 2
-  armTime: 0.5
+  name: Firecracker
+  trapDamage: 1
+  armTime: 0.1

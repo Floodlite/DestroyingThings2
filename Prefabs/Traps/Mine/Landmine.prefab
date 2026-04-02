@@ -294,9 +294,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b53878af790744ab2f2acf416031f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrapActivate
-  trapStats: {fileID: 0}
+  trapStats: {fileID: 11400000, guid: 361f0104f1e9bfc45b4ecf036f471778, type: 2}
   fxChain: []
-  hurtBox: {fileID: 0}
 --- !u!1 &5475966028645497186
 GameObject:
   m_ObjectHideFlags: 0
@@ -635,8 +634,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aadd21773278fd54eb6c0cd842b575d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrapHurtBox
-  enemy: {fileID: 0}
-  enemyHealth: {fileID: 0}
+  trap: {fileID: 0}
 --- !u!1001 &4869050818646565525
 PrefabInstance:
   m_ObjectHideFlags: 0

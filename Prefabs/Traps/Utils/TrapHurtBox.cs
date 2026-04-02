@@ -4,10 +4,6 @@ public class TrapHurtBox : MonoBehaviour
 {
     public TrapConstructor trap;
 
-    private void Awake()
-    {
-
-    }
 
     public int GetTrapDamage()
     {
