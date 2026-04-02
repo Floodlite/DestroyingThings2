@@ -2,14 +2,40 @@ using UnityEngine;
 
 public class Reanimator : MonoBehaviour
 {
-    private GameObject self;
+    [SerializeField] private bool dead = false;
+    private EnemyHealth controlledEnemy;
 
-    private void start()
+    private void Awake()
     {
-        self = this.transform.GetChild(0).gameObject;
+        if (controlledEnemy == null)
+        {
+            controlledEnemy = GetComponentInChildren<EnemyHealth>(true);
+        }
     }
-    public void reEnable()
+
+    public void SetDeathStatus(bool aliveOrDead)
     {
-        self.SetActive(true);
+        dead = aliveOrDead;
+        Debug.Log("Switched to " + aliveOrDead);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!dead || !other.CompareTag("Junkie"))
+        {
+            return;
+        }
+
+        if (controlledEnemy == null)
+        {
+            controlledEnemy = GetComponentInChildren<EnemyHealth>(true);
+        }
+
+        if (controlledEnemy == null)
+        {
+            return;
+        }
+
+        controlledEnemy.Resurrect();
     }
 }

@@ -3,10 +3,14 @@ using UnityEngine;
 public class HurtBox : MonoBehaviour
 {
     public EnemyConstructor enemy;
+    [SerializeField] private EnemyHealth enemyHealth;
 
-    private void Start()
+    private void Awake()
     {
-        
+        if (enemyHealth == null)
+        {
+            enemyHealth = GetComponentInParent<EnemyHealth>();
+        }
     }
 
     public int GetDamage()
@@ -16,13 +20,19 @@ public class HurtBox : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag("Player"))
+        if (enemyHealth != null && enemyHealth.IsDead)
+        {
             return;
+        }
+
+        if (!other.CompareTag("Player")) {
+            return;
+        }
 
         PlayerHealth playerHealth = other.GetComponentInParent<PlayerHealth>();
         if (playerHealth == null)
             return;
 
-        playerHealth.LoseHP(this.GetDamage());
+        playerHealth.LoseHP(GetDamage());
     }
 }
