@@ -31,6 +31,7 @@ public class Player : MonoBehaviour
     public Vector3 movingDirection;
     [SerializeField] private Camera playerCamera;
     [SerializeField] private bool breakdanceMode = false;
+    [SerializeField] private bool hoofRecharged = true;
 
     [SerializeField] private bool boxHit = false;
     [SerializeField] private float boxDistance = 3f;
@@ -98,7 +99,7 @@ public class Player : MonoBehaviour
 
         destroyer.Player.High_Jump.started += HighJump;
         destroyer.Player.High_Jump.Enable();
-        destroyer.Player.High_Jump.AddCompositeBinding("OneModifier").With("Binding", "<Keyboard>/Space").With("Modifier", "<Keyboard>/Shift");
+        //destroyer.Player.High_Jump.AddCompositeBinding("OneModifier").With("Binding", "<Keyboard>/Space").With("Modifier", "<Keyboard>/Shift");
 
         destroyer.Player.Hoof_It.started += HoofIt;
         destroyer.Player.Hoof_It.Enable();
@@ -270,17 +271,21 @@ public class Player : MonoBehaviour
 
     private void HoofIt(InputAction.CallbackContext obj)
     {
-        if (!Grounded() && !hoofCooldown)
+        //if (!Grounded() && !hoofCooldown)
+        if(!Grounded() && hoofRecharged)
         {
+            hoofRecharged = false;
+            
             moveDirection += move.ReadValue<Vector2>().x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed;
             moveDirection += move.ReadValue<Vector2>().y * GetCameraF(playerCamera) * moveSpeed * hoofSpeed;
             moveDirection += Vector3.down;
             rb.AddForce(moveDirection, ForceMode.Impulse);
             Debug.Log("Hoofing it: Strong");
-            hoofCooldown = true;
-            StartCoroutine(HoofWait(1.5f));
+            StartCoroutine(RechargeHoof());
+            //hoofCooldown = true;
+            //StartCoroutine(HoofWait(1.5f));
         }
-        else if (Grounded () && !hoofCooldown)
+        /*else if (Grounded() && !hoofCooldown)
         {
             moveDirection += move.ReadValue<Vector2>().x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed * 0.25f;
             moveDirection += move.ReadValue<Vector2>().y * GetCameraF(playerCamera) * moveSpeed * hoofSpeed * 0.25f;
@@ -288,7 +293,7 @@ public class Player : MonoBehaviour
             Debug.Log("Hoofing it: Weak");
             hoofCooldown = true;
             StartCoroutine(HoofWait(1f));
-        }
+        } */
     }
 
     private void Sneak(InputAction.CallbackContext obj)
@@ -447,12 +452,12 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         if (!Grounded() && !sneaking)
         {
-            airborneMovement *= 0.5f;
+            airborneMovement *= 0.2f;
             yield return null;
         }
         else if (!Grounded() && sneaking)
         {
-            airborneMovement *= 1.1f;
+            airborneMovement *= 0.8f;
             yield return null;
         }
 
@@ -500,6 +505,16 @@ public class Player : MonoBehaviour
         hoofCooldown = true;
         yield return new WaitForSeconds(coolTime);
         hoofCooldown = false;
+    }
+
+    IEnumerator RechargeHoof()
+    {
+        hoofRecharged = false;
+        while (!Grounded())
+        {
+            yield return new WaitForSeconds(0.1f);
+        }
+        hoofRecharged = true;
     }
 
 
