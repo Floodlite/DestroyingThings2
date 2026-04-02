@@ -6,17 +6,31 @@ public class TrapActivate : MonoBehaviour
 {
     [SerializeField] private TrapConstructor trapStats;
     [SerializeField] private List<GameObject> fxChain = new List<GameObject>();
+    private Transform parent;
+    private TrapHurtBox trapHurtBoxScript;
+    private GameObject hurtBox;
+    private Collider trapHurtBoxCollider;
+    private float hurtBoxStartRadius;
 
     private void Start()
     {
+        parent = this.transform.parent;
+        if(parent == null)
+        {
+            parent = this.transform;
+        }
+
         fxChain = AddObjectsOfTag(this.transform, "Particles");
 
-        TrapHurtBox trapHurtBoxScript = GetComponentInChildren<TrapHurtBox>();
+        trapHurtBoxScript = GetComponentInChildren<TrapHurtBox>();
         trapHurtBoxScript.enabled = false;
 
-        GameObject hurtBox = FindHurtBox(transform);
-        Collider trapHurtBoxCollider = hurtBox.GetComponentInChildren<Collider>();
+        hurtBox = FindHurtBox(transform);
+        trapHurtBoxCollider = hurtBox.GetComponentInChildren<Collider>();
         trapHurtBoxCollider.enabled = false;
+
+        hurtBoxStartRadius = hurtBox.transform.localScale.x;
+        ShrinkHurtBox(0.5f);
     }
 
     private List<GameObject> AddObjectsOfTag(Transform parent, string tag)
@@ -60,19 +74,20 @@ public class TrapActivate : MonoBehaviour
 
     IEnumerator StartDetonation(float armTime)
     {
-         yield return new WaitForSeconds(0.01f);
+        yield return new WaitForSeconds(0.01f);
         Debug.Log("Coroutine started");
         TrapHurtBox trapHurtBoxScript = GetComponentInChildren<TrapHurtBox>();
         GameObject hurtBox = FindHurtBox(transform);
         Collider trapHurtBoxCollider = hurtBox.GetComponentInChildren<Collider>();
 
+        StartCoroutine(RegrowHurtBox(armTime));
         yield return new WaitForSeconds(armTime);
         trapHurtBoxScript.enabled = true;
         trapHurtBoxCollider.enabled = true;
         Debug.Log("Script enabled");
 
         PlayParticles();
-        Debug.Log("Waiting");
+        Debug.Log("Waiting for" + this.name);
         yield return new WaitForSeconds(armTime * 0.2f);
         Destroy(gameObject);
         Debug.Log("Discarded trap: " + this.name);
@@ -86,5 +101,34 @@ public class TrapActivate : MonoBehaviour
             particles.Play(true);
             Debug.Log("Particles played: " + particles.name);
         }
+    }
+
+    private void ShrinkHurtBox(float multiplier)
+    {
+        hurtBox.transform.localScale = new Vector3(hurtBoxStartRadius*multiplier, 
+            hurtBoxStartRadius*multiplier, hurtBoxStartRadius*multiplier);
+    }
+
+    IEnumerator RegrowHurtBox(float armTime)
+    {
+        Vector3 startScale = hurtBox.transform.localScale;
+        Vector3 targetScale = new Vector3(hurtBoxStartRadius, hurtBoxStartRadius, hurtBoxStartRadius);
+        float timeElapsed = 0f;
+
+        if (armTime <= 0f)
+        {
+            hurtBox.transform.localScale = targetScale;
+            yield break;
+        }
+
+        while (timeElapsed < armTime)
+        {
+            timeElapsed += Time.deltaTime;
+            float time = Mathf.Clamp01(timeElapsed / armTime);
+            hurtBox.transform.localScale = Vector3.Lerp(startScale, targetScale, time);
+            yield return null;
+        }
+
+        hurtBox.transform.localScale = targetScale;
     }
 }
