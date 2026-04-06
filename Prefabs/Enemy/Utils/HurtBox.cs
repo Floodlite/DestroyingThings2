@@ -34,6 +34,6 @@ public class HurtBox : MonoBehaviour
             return;
         }
 
-        playerHealth.LoseHP(GetDamage());
+        playerHealth.LoseHP(this.GetDamage());
     }
 }
