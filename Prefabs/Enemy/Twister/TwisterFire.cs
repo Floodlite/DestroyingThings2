@@ -101,7 +101,13 @@ public class TwisterFire : MonoBehaviour
             player = closestPlayer.gameObject;
             distanceToPlayer = Vector3.Distance(transform.position, closestPlayer.transform.position);
             if(distanceToPlayer > minPlayerDistance && distanceToPlayer < maxPlayerDistance) {
-                Shoot(projectileSpeed);
+                if(closestPlayer.Grounded()) {
+                    Shoot(projectileSpeed);
+                }
+                else
+                {
+                    Shoot(projectileSpeed* 1.25f);
+                }
             }
             yield return new WaitForSeconds(attackFreq);
         }

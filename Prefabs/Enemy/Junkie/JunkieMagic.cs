@@ -6,7 +6,7 @@ public class JunkieMagic : MonoBehaviour
     [SerializeField] private GameObject enemy;
     [SerializeField] private EnemyHealth enemyScript;
     [SerializeField] private float resSpeed = 2f;
-    private bool sphereHit = false;
+    //private bool sphereHit = false;
 
     private void Start()
     {

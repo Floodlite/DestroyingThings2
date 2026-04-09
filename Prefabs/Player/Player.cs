@@ -21,7 +21,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float airborneMovement = 1f;
     [SerializeField] private float yourSpeed = 1f;
     private float hoofSpeed = 24f;
-    private bool hoofCooldown = false;
+    //private bool hoofCooldown = false;
     [SerializeField] private bool sneaking = false;
     [SerializeField] private bool drifting = false;
     [SerializeField] private bool accelerating = false;
@@ -413,7 +413,7 @@ public class Player : MonoBehaviour
     }
 
 
-    private bool Grounded()
+    public bool Grounded()
     {
         bool boxHit = Physics.BoxCast(GetComponent<Collider>().bounds.center, transform.localScale * 0.75f, Vector3.down, out objectHit, transform.rotation, boxDistance);
 
@@ -499,6 +499,7 @@ public class Player : MonoBehaviour
         }
     }
 
+    /*
     IEnumerator HoofWait(float coolTime)
     {
         yield return new WaitForSeconds(0.1f);
@@ -506,6 +507,7 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(coolTime);
         hoofCooldown = false;
     }
+    */
 
     IEnumerator RechargeHoof()
     {
