@@ -8,6 +8,7 @@ public class EnemyChase : MonoBehaviour
     [SerializeField] private Vector3 playerLocation;
     [SerializeField] private EnemyConstructor enemy;
     [SerializeField] private Player[] players;
+    [SerializeField] private float navSampleRadius = 2f;
 
 
     private void Start()
@@ -17,12 +18,13 @@ public class EnemyChase : MonoBehaviour
 
     private Player FindClosestPlayer()
     {
-        float distanceToPlayer = 0;
+        float distanceToPlayer;
         float closestDistance = 99999;
         int indexOfClosest = 0;
 
         //Switch to FindObjectsSortMode.None if performance issues arise
         players = FindObjectsByType<Player>(FindObjectsSortMode.InstanceID);
+        if (players == null || players.Length == 0) { return null; }
 
         for(int i=0; i<players.Length; i++)
         {
@@ -39,8 +41,18 @@ public class EnemyChase : MonoBehaviour
 
     private void Update()
     {
-        playerLocation = FindClosestPlayer().transform.position;
-        agent.SetDestination(playerLocation);
+        Player closestPlayer = FindClosestPlayer();
+        if(closestPlayer == null) {
+            agent.ResetPath(); 
+            return; 
+        }
+
+        playerLocation = closestPlayer.transform.position;
+
+        if (NavMesh.SamplePosition(playerLocation, out NavMeshHit hit, navSampleRadius, NavMesh.AllAreas))
+        {
+            agent.SetDestination(hit.position);
+        }
     }
 }
 
