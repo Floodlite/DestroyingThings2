@@ -64,18 +64,19 @@ public class TrapActivate : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        //Debug.Log(other.tag);
         if (!other.CompareTag("Player"))
         {
             return;
         }
-        Debug.Log("Someone entered");
+        //Debug.Log("Someone entered");
         StartCoroutine(StartDetonation(trapStats.armTime));
     }
 
     IEnumerator StartDetonation(float armTime)
     {
         yield return new WaitForSeconds(0.01f);
-        Debug.Log("Coroutine started");
+        //Debug.Log("Coroutine started");
         TrapHurtBox trapHurtBoxScript = GetComponentInChildren<TrapHurtBox>();
         GameObject hurtBox = FindHurtBox(transform);
         Collider trapHurtBoxCollider = hurtBox.GetComponentInChildren<Collider>();
@@ -84,13 +85,13 @@ public class TrapActivate : MonoBehaviour
         yield return new WaitForSeconds(armTime);
         trapHurtBoxScript.enabled = true;
         trapHurtBoxCollider.enabled = true;
-        Debug.Log("Script enabled");
+        //Debug.Log("Script enabled");
 
         PlayParticles();
-        Debug.Log("Waiting for" + this.name);
+        //Debug.Log("Waiting for" + this.name);
         yield return new WaitForSeconds(armTime * 0.2f);
         Destroy(gameObject);
-        Debug.Log("Discarded trap: " + this.name);
+        //Debug.Log("Discarded trap: " + this.name);
     }
 
     private void PlayParticles()
@@ -99,7 +100,7 @@ public class TrapActivate : MonoBehaviour
         {
             ParticleSystem particles = fx.GetComponentInChildren<ParticleSystem>();
             particles.Play(true);
-            Debug.Log("Particles played: " + particles.name);
+            //Debug.Log("Particles played: " + particles.name);
         }
     }
 

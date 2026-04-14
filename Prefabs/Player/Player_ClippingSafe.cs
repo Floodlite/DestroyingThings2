@@ -1,16 +1,15 @@
-using JetBrains.Annotations;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
-using System;
 
-public class Player : MonoBehaviour
+[RequireComponent(typeof(Rigidbody), typeof(Collider))]
+public class PlayerClippingSafe : MonoBehaviour
 {
     private Destroyer destroyer;
     private InputAction move;
 
     public Rigidbody rb;
+    private Collider cachedCollider;
 
     [SerializeField] private float moveSpeed = 3f;
     [SerializeField] private float jumpHeight = 30f;
@@ -20,8 +19,12 @@ public class Player : MonoBehaviour
     [SerializeField] private float accelSpeed = 1f;
     [SerializeField] private float airborneMovement = 1f;
     [SerializeField] private float yourSpeed = 1f;
-    private float hoofSpeed = 24f;
-    //private bool hoofCooldown = false;
+    [SerializeField] private float hoofSpeed = 24f;
+    [SerializeField] private float maxDisplacementPerStep = 1.5f;
+    [SerializeField] private float collisionSkin = 0.03f;
+    [SerializeField] private float groundCheckDistance = 0.15f;
+    [SerializeField] private float groundCheckHeight = 0.05f;
+    [SerializeField] private float wallProjectionThreshold = 0.01f;
     [SerializeField] private bool sneaking = false;
     [SerializeField] private bool drifting = false;
     [SerializeField] private bool accelerating = false;
@@ -53,28 +56,30 @@ public class Player : MonoBehaviour
     private float currentTime;
     private bool punchInProgress;
     private float holdTime;
-    [SerializeField] private float throttle = 1;
+    [SerializeField] private float throttle = 1f;
 
-
-
+    private bool jumpQueued;
+    private bool highJumpQueued;
+    private bool hoofQueued;
+    private Vector3 queuedBurstImpulse = Vector3.zero;
 
     private void Awake()
     {
-        rb = this.GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
+        cachedCollider = GetComponent<Collider>();
         destroyer = new Destroyer();
-        Collider collider = GetComponent<Collider>();
+
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
-    void Start()
+    private void Start()
     {
         Debug.Log("It's destruction time");
     }
 
     private void OnEnable()
     {
-
         move = destroyer.Player.Move;
         destroyer.Player.Move.Enable();
 
@@ -102,20 +107,25 @@ public class Player : MonoBehaviour
 
         destroyer.Player.High_Jump.started += HighJump;
         destroyer.Player.High_Jump.Enable();
-        //destroyer.Player.High_Jump.AddCompositeBinding("OneModifier").With("Binding", "<Keyboard>/Space").With("Modifier", "<Keyboard>/Shift");
 
         destroyer.Player.Hoof_It.started += HoofIt;
         destroyer.Player.Hoof_It.Enable();
-        destroyer.Player.Hoof_It.AddCompositeBinding("OneModifier").With("Binding", "<Keyboard>/W").With("Binding", "<Keyboard>/A").With("Binding", "<Keyboard>/S").With("Binding", "<Keyboard>/D").With("Modifier", "<Keyboard>/H");
-
+        destroyer.Player.Hoof_It.AddCompositeBinding("OneModifier")
+            .With("Binding", "<Keyboard>/W")
+            .With("Binding", "<Keyboard>/A")
+            .With("Binding", "<Keyboard>/S")
+            .With("Binding", "<Keyboard>/D")
+            .With("Modifier", "<Keyboard>/H");
 
         destroyer.Player.Escape.performed += GetOut;
         destroyer.Player.Escape.Enable();
 
         destroyer.Player.Enable();
 
-        targetAura.gameObject.SetActive(false);
-
+        if (targetAura != null)
+        {
+            targetAura.gameObject.SetActive(false);
+        }
     }
 
     private void OnDisable()
@@ -130,50 +140,146 @@ public class Player : MonoBehaviour
         destroyer.Player.Accelerate.started -= Accelerator;
         destroyer.Player.Punch.started -= BeginPunch;
         destroyer.Player.Punch.canceled -= ReleasePunch;
+        destroyer.Player.Escape.performed -= GetOut;
         destroyer.Player.Disable();
     }
-
 
     private void FixedUpdate()
     {
         yourSpeed = moveSpeed * storedSpeed * airborneMovement * accelSpeed;
-        moveDirection += move.ReadValue<Vector2>().x * GetCameraR(playerCamera) * yourSpeed;
-        moveDirection += move.ReadValue<Vector2>().y * GetCameraF(playerCamera) * yourSpeed;
-        movingDirection = moveDirection;
-        
-        /*if (movingDirection != Vector3.zero && !sneaking && accelerationEnabled) {
-            accelerating = true;
-            InvokeRepeating("AccelerationII", 2f, 1f); //To-do: Replace with coroutine
-        }
-        else {
-            accelerating = false;
-        }*/
-        
+        Vector2 moveInput = move.ReadValue<Vector2>();
+        Vector3 desiredMoveForce = Vector3.zero;
+        desiredMoveForce += moveInput.x * GetCameraR(playerCamera) * yourSpeed;
+        desiredMoveForce += moveInput.y * GetCameraF(playerCamera) * yourSpeed;
+        moveDirection = desiredMoveForce;
+        movingDirection = desiredMoveForce;
 
         if (drifting)
         {
-            transform.rotation *= Quaternion.AngleAxis(15, Vector3.up);
+            transform.rotation *= Quaternion.AngleAxis(15f, Vector3.up);
         }
 
-        rb.AddForce(moveDirection, ForceMode.Impulse);
-        rb.AddForce(moveDirection, ForceMode.Acceleration);
-        moveDirection = Vector3.zero; 
+        rb.AddForce(desiredMoveForce, ForceMode.Acceleration);
+        ProcessQueuedMovementActions(moveInput);
 
         if (rb.linearVelocity.y < 0f)
         {
             rb.linearVelocity += Vector3.up * Physics.gravity.y * fallForce * Time.fixedDeltaTime;
         }
 
-        Vector3 horizontalVelocity = rb.linearVelocity;
-        horizontalVelocity.y = 0;
-        if (horizontalVelocity.sqrMagnitude > maxSpeed * maxSpeed)
-        {
-            rb.linearVelocity = horizontalVelocity.normalized * maxSpeed + Vector3.up * rb.linearVelocity.y;
-        }
+        ClampHorizontalVelocity();
+        ClampStepDisplacement();
 
         if (!breakdanceMode)
         {
             LookDirection();
+        }
+    }
+
+    private void ProcessQueuedMovementActions(Vector2 moveInput)
+    {
+        if (jumpQueued)
+        {
+            if (Grounded())
+            {
+                queuedBurstImpulse += Vector3.up * jumpHeight;
+                StartCoroutine(GroundCheck());
+            }
+            else
+            {
+                queuedBurstImpulse += Vector3.up * jumpHeight * 0.055f;
+            }
+            jumpQueued = false;
+        }
+
+        if (highJumpQueued)
+        {
+            if (Grounded() && !breakdanceMode)
+            {
+                queuedBurstImpulse += Vector3.up * jumpHeight * 1.75f;
+                queuedBurstImpulse += transform.forward * jumpHeight * 2.5f;
+                StartCoroutine(GroundCheck());
+                Debug.Log("Go long");
+            }
+            highJumpQueued = false;
+        }
+
+        if (hoofQueued)
+        {
+            if (!Grounded() && hoofRecharged)
+            {
+                hoofRecharged = false;
+                queuedBurstImpulse += moveInput.x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed;
+                queuedBurstImpulse += moveInput.y * GetCameraF(playerCamera) * moveSpeed * hoofSpeed;
+                queuedBurstImpulse += Vector3.down;
+                Debug.Log("Hoofing it: Strong");
+                StartCoroutine(RechargeHoof());
+            }
+            hoofQueued = false;
+        }
+
+        if (queuedBurstImpulse.sqrMagnitude > 0f)
+        {
+            ApplyBurstImpulseSafely(queuedBurstImpulse);
+            queuedBurstImpulse = Vector3.zero;
+        }
+    }
+
+    private void ApplyBurstImpulseSafely(Vector3 impulse)
+    {
+        float safeMass = Mathf.Max(0.0001f, rb.mass);
+        Vector3 predictedVelocity = rb.linearVelocity + (impulse / safeMass);
+        Vector3 predictedDisplacement = predictedVelocity * Time.fixedDeltaTime;
+
+        if (TrySweep(predictedDisplacement, out RaycastHit sweepHit))
+        {
+            float safeDistance = Mathf.Max(0f, sweepHit.distance - collisionSkin);
+            if (safeDistance > 0f && predictedDisplacement.sqrMagnitude > 0f)
+            {
+                rb.position += predictedDisplacement.normalized * safeDistance;
+            }
+
+            rb.linearVelocity = Vector3.ProjectOnPlane(predictedVelocity, sweepHit.normal);
+            return;
+        }
+
+        rb.AddForce(impulse, ForceMode.Impulse);
+    }
+
+    private bool TrySweep(Vector3 displacement, out RaycastHit hit)
+    {
+        if (displacement.sqrMagnitude <= 0f)
+        {
+            hit = default;
+            return false;
+        }
+
+        Vector3 direction = displacement.normalized;
+        float distance = displacement.magnitude + collisionSkin;
+        return rb.SweepTest(direction, out hit, distance, QueryTriggerInteraction.Ignore);
+    }
+
+    private void ClampHorizontalVelocity()
+    {
+        Vector3 horizontalVelocity = rb.linearVelocity;
+        horizontalVelocity.y = 0f;
+        if (horizontalVelocity.sqrMagnitude > maxSpeed * maxSpeed)
+        {
+            rb.linearVelocity = horizontalVelocity.normalized * maxSpeed + Vector3.up * rb.linearVelocity.y;
+        }
+    }
+
+    private void ClampStepDisplacement()
+    {
+        if (Time.fixedDeltaTime <= 0f)
+        {
+            return;
+        }
+
+        float maxAllowedStepSpeed = maxDisplacementPerStep / Time.fixedDeltaTime;
+        if (rb.linearVelocity.magnitude > maxAllowedStepSpeed)
+        {
+            rb.linearVelocity = rb.linearVelocity.normalized * maxAllowedStepSpeed;
         }
     }
 
@@ -186,7 +292,7 @@ public class Player : MonoBehaviour
     {
         return movingDirection;
     }
-    
+
     private void AccelerationII()
     {
         if (accelerating)
@@ -199,13 +305,13 @@ public class Player : MonoBehaviour
             {
                 accelSpeed -= 0.01f;
             }
-            else if(accelSpeed > 10f)
+            else if (accelSpeed > 10f)
             {
                 accelSpeed -= 0.02f;
             }
         }
 
-        if (accelSpeed > maxSpeed / 4f + (storedSpeed*0.1f))
+        if (accelSpeed > maxSpeed / 4f + (storedSpeed * 0.1f))
         {
             accelSpeed -= 0.1f;
         }
@@ -248,55 +354,17 @@ public class Player : MonoBehaviour
 
     private void HowToJump(InputAction.CallbackContext obj)
     {
-        if (Grounded())
-        {
-            moveDirection += Vector3.up * jumpHeight;
-            StartCoroutine(GroundCheck());
-        }
-        //It's time you learned how
-        else
-        {
-            moveDirection += Vector3.up * jumpHeight * 0.055f;
-            //Air "hover"
-        }
+        jumpQueued = true;
     }
 
     private void HighJump(InputAction.CallbackContext obj)
     {
-        if (Grounded() && !breakdanceMode)
-        {
-            moveDirection += Vector3.up * jumpHeight * 1.75f;
-            moveDirection += transform.forward * jumpHeight * 2.5f;
-            StartCoroutine(GroundCheck());
-            Debug.Log("Go long");
-        }
+        highJumpQueued = true;
     }
 
     private void HoofIt(InputAction.CallbackContext obj)
     {
-        //if (!Grounded() && !hoofCooldown)
-        if(!Grounded() && hoofRecharged)
-        {
-            hoofRecharged = false;
-            
-            moveDirection += move.ReadValue<Vector2>().x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed;
-            moveDirection += move.ReadValue<Vector2>().y * GetCameraF(playerCamera) * moveSpeed * hoofSpeed;
-            moveDirection += Vector3.down;
-            rb.AddForce(moveDirection, ForceMode.Impulse);
-            Debug.Log("Hoofing it: Strong");
-            StartCoroutine(RechargeHoof());
-            //hoofCooldown = true;
-            //StartCoroutine(HoofWait(1.5f));
-        }
-        /*else if (Grounded() && !hoofCooldown)
-        {
-            moveDirection += move.ReadValue<Vector2>().x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed * 0.25f;
-            moveDirection += move.ReadValue<Vector2>().y * GetCameraF(playerCamera) * moveSpeed * hoofSpeed * 0.25f;
-            rb.AddForce(moveDirection, ForceMode.Impulse);
-            Debug.Log("Hoofing it: Weak");
-            hoofCooldown = true;
-            StartCoroutine(HoofWait(1f));
-        } */
+        hoofQueued = true;
     }
 
     private void Sneak(InputAction.CallbackContext obj)
@@ -341,7 +409,7 @@ public class Player : MonoBehaviour
             accelSpeed = 1f;
         }
     }
-    
+
     private void BeginPunch(InputAction.CallbackContext obj)
     {
         punchInProgress = true;
@@ -350,8 +418,8 @@ public class Player : MonoBehaviour
 
     private void ReleasePunch(InputAction.CallbackContext obj)
     {
-        if(punchInProgress) {
-            //playerAttack.BringTheHurt();
+        if (punchInProgress)
+        {
             punchDuration = basePunchDuration;
             punchSize = basePunchSize;
             if (drifting)
@@ -364,7 +432,7 @@ public class Player : MonoBehaviour
                 punchDuration *= 1.5f;
                 punchSize *= 1.25f;
             }
-            if(accelerationEnabled)
+            if (accelerationEnabled)
             {
                 punchDuration *= 0.85f;
                 punchSize *= 1.15f;
@@ -373,26 +441,7 @@ public class Player : MonoBehaviour
             currentTime = Time.time;
             holdTime = currentTime - startTime;
 
-            //Debug.Log("Punch held: " + holdTime);
-            //Long press: Long punch
-            //Short press: Short punch
-            /*
-            if(holdTime >= 0.4f) {    
-                playerAttack.BringTheHurtII(punchDuration*1.25f, punchSize, true);
-            }
-            else
-            {
-                playerAttack.BringTheHurtII(punchDuration, punchSize, false);
-            }*/
             playerAttack.BringTheHurtII(punchDuration, punchSize, false);
-            
-            /*
-            ChangeThrottle(200*(2+holdTime));
-            moveDirection += transform.forward * throttle;
-            rb.AddForce(moveDirection, ForceMode.Impulse);
-            rb.AddForce(moveDirection, ForceMode.Acceleration);
-            */
-
             punchInProgress = false;
         }
     }
@@ -415,22 +464,31 @@ public class Player : MonoBehaviour
         }
     }
 
-
     public bool Grounded()
     {
-        bool boxHit = Physics.BoxCast(GetComponent<Collider>().bounds.center, transform.localScale * 0.75f, Vector3.down, out objectHit, transform.rotation, boxDistance);
+        if (cachedCollider == null)
+        {
+            cachedCollider = GetComponent<Collider>();
+            if (cachedCollider == null)
+            {
+                boxHit = false;
+                return false;
+            }
+        }
 
-        if (boxHit)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        Bounds b = cachedCollider.bounds;
+        Vector3 center = b.center;
+        Vector3 halfExtents = new Vector3(
+            Mathf.Max(0.02f, b.extents.x * 0.92f),
+            groundCheckHeight,
+            Mathf.Max(0.02f, b.extents.z * 0.92f)
+        );
+        float castDistance = groundCheckDistance + Mathf.Abs(rb.linearVelocity.y) * Time.fixedDeltaTime;
+        boxHit = Physics.BoxCast(center, halfExtents, Vector3.down, out objectHit, transform.rotation, castDistance, ~0, QueryTriggerInteraction.Ignore);
+        return boxHit;
     }
 
-    void OnDrawGizmos()
+    private void OnDrawGizmos()
     {
         if (boxHit)
         {
@@ -445,12 +503,11 @@ public class Player : MonoBehaviour
             Gizmos.DrawWireCube(transform.position + Vector3.down * boxDistance, transform.localScale);
         }
 
-        
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position+gizmoCubeVector, 2f);
+        Gizmos.DrawWireSphere(transform.position + gizmoCubeVector, 2f);
     }
 
-    IEnumerator GroundCheck()
+    private IEnumerator GroundCheck()
     {
         yield return new WaitForSeconds(0.5f);
         if (!Grounded() && !sneaking)
@@ -471,7 +528,7 @@ public class Player : MonoBehaviour
         airborneMovement = 1f;
     }
 
-    IEnumerator PowerToGround()
+    private IEnumerator PowerToGround()
     {
         if (storedSpeed <= 1f)
         {
@@ -502,17 +559,7 @@ public class Player : MonoBehaviour
         }
     }
 
-    /*
-    IEnumerator HoofWait(float coolTime)
-    {
-        yield return new WaitForSeconds(0.1f);
-        hoofCooldown = true;
-        yield return new WaitForSeconds(coolTime);
-        hoofCooldown = false;
-    }
-    */
-
-    IEnumerator RechargeHoof()
+    private IEnumerator RechargeHoof()
     {
         hoofRecharged = false;
         while (!Grounded())
@@ -522,7 +569,6 @@ public class Player : MonoBehaviour
         hoofRecharged = true;
     }
 
-
     private void LookDirection()
     {
         Vector3 direction = rb.linearVelocity;
@@ -530,7 +576,7 @@ public class Player : MonoBehaviour
 
         if (move.ReadValue<Vector2>().sqrMagnitude > 0.1f && direction.sqrMagnitude > 0.1f)
         {
-            this.rb.rotation = Quaternion.LookRotation(direction, Vector3.up);
+            rb.rotation = Quaternion.LookRotation(direction, Vector3.up);
         }
         else
         {
@@ -538,18 +584,54 @@ public class Player : MonoBehaviour
         }
     }
 
-    private Vector3 GetCameraF(Camera playerCamera)
+    private Vector3 GetCameraF(Camera sourceCamera)
     {
-        Vector3 forward = playerCamera.transform.forward;
-        forward.y = 0;
+        if (sourceCamera == null)
+        {
+            return transform.forward;
+        }
+
+        Vector3 forward = sourceCamera.transform.forward;
+        forward.y = 0f;
         return forward.normalized;
     }
 
-    private Vector3 GetCameraR(Camera playerCamera)
+    private Vector3 GetCameraR(Camera sourceCamera)
     {
-        Vector3 right = playerCamera.transform.right;
-        right.y = 0;
+        if (sourceCamera == null)
+        {
+            return transform.right;
+        }
+
+        Vector3 right = sourceCamera.transform.right;
+        right.y = 0f;
         return right.normalized;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        ProjectVelocityOnContacts(collision);
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        ProjectVelocityOnContacts(collision);
+    }
+
+    private void ProjectVelocityOnContacts(Collision collision)
+    {
+        Vector3 velocity = rb.linearVelocity;
+
+        foreach (ContactPoint contact in collision.contacts)
+        {
+            float intoSurface = Vector3.Dot(velocity, contact.normal);
+            if (intoSurface < -wallProjectionThreshold)
+            {
+                velocity = Vector3.ProjectOnPlane(velocity, contact.normal);
+            }
+        }
+
+        rb.linearVelocity = velocity;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -559,7 +641,10 @@ public class Player : MonoBehaviour
             targetGet = true;
             Destroy(other.gameObject);
             Debug.Log("Target acquired");
-            targetAura.gameObject.SetActive(true);
+            if (targetAura != null)
+            {
+                targetAura.gameObject.SetActive(true);
+            }
         }
 
         if (other.CompareTag("Finish"))
@@ -568,12 +653,12 @@ public class Player : MonoBehaviour
             {
                 Destroy(other.gameObject);
                 Debug.Log("Win");
-                targetAura.gameObject.SetActive(false);
+                if (targetAura != null)
+                {
+                    targetAura.gameObject.SetActive(false);
+                }
                 targetGet = false;
             }
         }
     }
-
-    
-
 }

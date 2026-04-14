@@ -5,8 +5,8 @@ using System.Collections.Generic;
 public class EnemyHealth : MonoBehaviour
 {
     [SerializeField] private EnemyConstructor enemy;
-    [SerializeField] private int maxHealth = 8;
-    [SerializeField] private int health = 8;
+    [SerializeField] private int maxHealth = 3;
+    [SerializeField] private int health = 3;
     [SerializeField] private Transform enemyRoot;
     [SerializeField] private bool isDead = false;
     public bool IsDead => isDead;
