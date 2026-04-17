@@ -86,6 +86,7 @@ public class TrapActivate : MonoBehaviour
         trapHurtBoxScript.enabled = true;
         trapHurtBoxCollider.enabled = true;
         //Debug.Log("Script enabled");
+        ApplyExplosionForce();
 
         PlayParticles();
         //Debug.Log("Waiting for" + this.name);
@@ -101,6 +102,22 @@ public class TrapActivate : MonoBehaviour
             ParticleSystem particles = fx.GetComponentInChildren<ParticleSystem>();
             particles.Play(true);
             //Debug.Log("Particles played: " + particles.name);
+        }
+    }
+
+    public void ApplyExplosionForce()
+    {
+        Vector3 explosionPosition = transform.position;
+        float radius = hurtBox.transform.localScale.x * 1.15f;
+        Collider[] colliders = Physics.OverlapSphere(explosionPosition, radius, ~0);
+        float blastForce = trapStats.explosionForce;
+
+        foreach (Collider collider in colliders)
+        {
+            if (collider.TryGetComponent<Rigidbody>(out Rigidbody rb))
+            {
+                rb.AddExplosionForce(blastForce, explosionPosition, radius, blastForce*1.8f, ForceMode.Impulse);
+            }
         }
     }
 

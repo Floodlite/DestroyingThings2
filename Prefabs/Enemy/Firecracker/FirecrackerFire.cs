@@ -130,7 +130,7 @@ public class FirecrackerFire : MonoBehaviour
         Vector3 directionToPlayer = closestPlayer.transform.position - transform.position;
         GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 0f), Quaternion.identity, Pooler.PoolType.bullets);
         Rigidbody ballRb = ball.GetComponent<Rigidbody>();
-        ballRb.linearVelocity = directionToPlayer * projectileSpeed;
+        ballRb.linearVelocity = directionToPlayer * projectileSpeed * 1.2f;
         //Debug.Log("Bam");
     }
 }

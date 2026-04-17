@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: Footbomb
   m_EditorClassIdentifier: Assembly-CSharp::TrapConstructor
   name: Footbomb
-  trapDamage: 2
-  armTime: 3
+  trapDamage: 3
+  armTime: 1.5
+  explosionForce: 7

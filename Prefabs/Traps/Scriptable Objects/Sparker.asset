@@ -15,3 +15,4 @@ MonoBehaviour:
   name: Firecracker
   trapDamage: 1
   armTime: 0.1
+  explosionForce: 3
