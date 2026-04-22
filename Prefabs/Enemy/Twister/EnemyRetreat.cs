@@ -9,11 +9,20 @@ public class EnemyRetreat : MonoBehaviour
     [SerializeField] private EnemyConstructor enemy;
     [SerializeField] private Player[] players;
     [SerializeField] private float retreatDistance = 6f;
+    [SerializeField] private float navSampleRadius = 2f;
+    [SerializeField] private bool retreatMode= false;
+    [SerializeField] private ConstructorConjunction constructors;
+    
 
 
     private void Start()
     {
         agent.speed = enemy.enemySpeed;
+    }
+
+    private void Awake()
+    {
+        constructors = GetComponent<ConstructorConjunction>();
     }
 
     private Player FindClosestPlayer()
@@ -46,14 +55,27 @@ public class EnemyRetreat : MonoBehaviour
             agent.ResetPath(); 
             return; 
         }
+        
+        if(Vector3.Distance(transform.position, closestPlayer.transform.position) < constructors.GetMinDistance()) { retreatMode = true; }
+        else { retreatMode = false; }
 
-        Vector3 fromPlayer = (transform.position - closestPlayer.transform.position).normalized;
-        Vector3 retreatTarget = transform.position + fromPlayer * retreatDistance;
+        if(retreatMode) {
+            Vector3 fromPlayer = (transform.position - closestPlayer.transform.position).normalized;
+            Vector3 retreatTarget = transform.position + fromPlayer * retreatDistance;
 
-        if(NavMesh.SamplePosition(retreatTarget, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-        {
-            agent.SetDestination(hit.position);
+            if(NavMesh.SamplePosition(retreatTarget, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            {
+                agent.SetDestination(hit.position);
+            }
         }
+        else
+        {
+            if (NavMesh.SamplePosition(playerLocation, out NavMeshHit hit, navSampleRadius, NavMesh.AllAreas))
+            {
+                agent.SetDestination(hit.position);
+            }
+        }
+
         //TODO: Make Twister move back in range of player to attack after retreating
     }
 }
