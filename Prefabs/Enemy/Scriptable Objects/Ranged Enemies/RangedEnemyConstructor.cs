@@ -6,7 +6,7 @@ public class RangedEnemyConstructor : ScriptableObject
     public new string name;
     public float minPlayerDistance;
     public float maxPlayerDistance;
-    public float attackFrequency;
+    public float attackFrequency; //attackCooldown
     public float projectileSpeed;
     public float projectileLifespan;
     public GameObject projectile;

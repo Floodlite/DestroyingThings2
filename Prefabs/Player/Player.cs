@@ -177,12 +177,12 @@ public class Player : MonoBehaviour
         }
     }
 
-    public float getPlayerSpeed()
+    public float GetPlayerSpeed()
     {
         return yourSpeed;
     }
 
-    public Vector3 getPlayerMoveDirection()
+    public Vector3 GetPlayerMoveDirection()
     {
         return movingDirection;
     }

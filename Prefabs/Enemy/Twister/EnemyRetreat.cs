@@ -54,6 +54,7 @@ public class EnemyRetreat : MonoBehaviour
         {
             agent.SetDestination(hit.position);
         }
+        //TODO: Make Twister move back in range of player to attack after retreating
     }
 }
 
