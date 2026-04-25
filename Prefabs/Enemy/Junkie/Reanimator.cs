@@ -19,6 +19,11 @@ public class Reanimator : MonoBehaviour
         //Debug.Log("Switched to " + aliveOrDead);
     }
 
+    public bool IsDead()
+    {
+        return dead;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (!dead || !other.CompareTag("Junkie"))
