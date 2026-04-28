@@ -127,16 +127,13 @@ public class FirecrackerFire : MonoBehaviour
     /// </summary>
     private BezierCurve ConstructCurve(Vector3 yourPosition, Vector3 targetPosition)
     {
-        float distance = Mathf.Abs(Vector3.Distance(yourPosition, targetPosition));
-        //y = -(2/distance * x)**2 + 1
-        float x1 = distance*0.25f;
-        float x2 = distance*0.75f;
+        Vector3 direction = targetPosition - yourPosition;
+        float distance = direction.magnitude;
+        //Vector3 midPoint = yourPosition + direction * 0.5f;
+        float arcHeight = distance * 0.3f;
 
-        float fx1 = -Mathf.Pow(2/distance * x1, 2);
-        float fx2 = -Mathf.Pow(2/distance * x2, 2);
-
-        Vector3 coord1 = new Vector3(x1, fx1, yourPosition.z); //Should the z-coord be x1?
-        Vector3 coord2 = new Vector3(x2, fx2, targetPosition.z);
+        Vector3 coord1 = yourPosition + direction * 0.25f + Vector3.up * arcHeight;
+        Vector3 coord2 = yourPosition + direction * 0.75f + Vector3.up * arcHeight;
 
         return new BezierCurve(yourPosition, coord1, coord2, targetPosition);
     }
@@ -145,17 +142,16 @@ public class FirecrackerFire : MonoBehaviour
     {
         float timeElapsed = 0f;
         yield return new WaitForSeconds(0.01f);
-        while(ball.transform.position.x != curve.P3.x 
-            && ball.transform.position.y != curve.P3.y
-            && ball.transform.position.z != curve.P3.z)
+        while(timeElapsed < 1f)
         {
             timeElapsed += Time.deltaTime / airTime;
-            ball.transform.position = Mathf.Pow(1 - timeElapsed, 2) * curve.P0 +
-                               2 * (1 - timeElapsed) * timeElapsed * curve.P1 +
-                               Mathf.Pow(timeElapsed, 2) * curve.P2;
-            yield return new WaitForSeconds(airTime / timeElapsed); //TODO!
+            float timeVar = Mathf.Clamp01(timeElapsed);
+            ball.transform.position = Mathf.Pow(1 - timeVar, 3) * curve.P0 +
+                               3 * Mathf.Pow(1 - timeVar, 2) * timeVar * curve.P1 +
+                               3 * Mathf.Pow(1 - timeVar, 2) * curve.P2 +
+                               Mathf.Pow(timeVar, 3) * curve.P3;
+            yield return null;
         }
-        yield break;
     }
 
     public void Shoot(float projectileSpeed)
