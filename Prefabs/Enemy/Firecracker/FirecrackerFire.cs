@@ -141,17 +141,17 @@ public class FirecrackerFire : MonoBehaviour
     IEnumerator ThrowProjectile(GameObject ball, BezierCurve curve, float airTime)
     {
         float timeElapsed = 0f;
-        yield return new WaitForSeconds(0.01f);
         while(timeElapsed < 1f)
         {
             timeElapsed += Time.deltaTime / airTime;
             float timeVar = Mathf.Clamp01(timeElapsed);
             ball.transform.position = Mathf.Pow(1 - timeVar, 3) * curve.P0 +
-                               3 * Mathf.Pow(1 - timeVar, 2) * timeVar * curve.P1 +
-                               3 * Mathf.Pow(1 - timeVar, 2) * curve.P2 +
-                               Mathf.Pow(timeVar, 3) * curve.P3;
+                          3 * Mathf.Pow(1 - timeVar, 2) * timeVar * curve.P1 +
+                          3 * (1 - timeVar) * Mathf.Pow(timeVar, 2) * curve.P2 +
+                          Mathf.Pow(timeVar, 3) * curve.P3;
             yield return null;
         }
+        ball.GetComponent<Rigidbody>().isKinematic = false;
     }
 
     public void Shoot(float projectileSpeed)
@@ -178,7 +178,9 @@ public class FirecrackerFire : MonoBehaviour
         }
 
         GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 0f), Quaternion.identity, Pooler.PoolType.bullets);
-        BezierCurve curve = ConstructCurve(transform.position, closestPlayer.transform.position);
+        BezierCurve curve = ConstructCurve(transform.position + new Vector3(0f, 1f, 0f), closestPlayer.transform.position);
+        Rigidbody ballRb = ball.GetComponent<Rigidbody>();
+        ballRb.isKinematic = true;
         StartCoroutine(ThrowProjectile(ball, curve, airTime));
         //Debug.Log("Blam");
     }
