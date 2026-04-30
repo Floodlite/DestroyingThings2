@@ -11,9 +11,11 @@ public class TrapActivate : MonoBehaviour
     private GameObject hurtBox;
     private Collider trapHurtBoxCollider;
     private float hurtBoxStartRadius;
+    [SerializeField] float blastForce;
 
     private void Start()
     {
+        blastForce = trapStats.explosionForce;
         parent = this.transform.parent;
         if(parent == null)
         {
@@ -110,7 +112,6 @@ public class TrapActivate : MonoBehaviour
         Vector3 explosionPosition = transform.position;
         float radius = hurtBox.transform.localScale.x * 1.15f;
         Collider[] colliders = Physics.OverlapSphere(explosionPosition, radius, ~0);
-        float blastForce = trapStats.explosionForce;
 
         foreach (Collider collider in colliders)
         {

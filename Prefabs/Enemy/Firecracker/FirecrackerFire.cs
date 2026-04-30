@@ -115,7 +115,7 @@ public class FirecrackerFire : MonoBehaviour
                 else
                 {
                     //Shoot(projectileSpeed * 0.9f);
-                    ShootII(projectileSpeed * 1.2f);
+                    ShootII(projectileSpeed * 0.9f);
                 }
             }
             yield return new WaitForSeconds(attackFreq);
@@ -177,8 +177,8 @@ public class FirecrackerFire : MonoBehaviour
             return;
         }
 
-        GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 0f), Quaternion.identity, Pooler.PoolType.bullets);
-        BezierCurve curve = ConstructCurve(transform.position + new Vector3(0f, 1f, 0f), closestPlayer.transform.position);
+        GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 1f), Quaternion.identity, Pooler.PoolType.bullets);
+        BezierCurve curve = ConstructCurve(transform.position + new Vector3(0f, 1f, 1f), closestPlayer.transform.position);
         Rigidbody ballRb = ball.GetComponent<Rigidbody>();
         ballRb.isKinematic = true;
         StartCoroutine(ThrowProjectile(ball, curve, airTime));

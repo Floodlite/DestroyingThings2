@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: FirecrackerSettings
   m_EditorClassIdentifier: Assembly-CSharp::RangedEnemyConstructor
   name: Firecracker
-  minPlayerDistance: 1
+  minPlayerDistance: 12
   maxPlayerDistance: 90
   attackFrequency: 2.5
   projectileSpeed: 0.8
