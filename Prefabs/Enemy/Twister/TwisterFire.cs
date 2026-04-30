@@ -7,7 +7,7 @@ public class TwisterFire : MonoBehaviour
     [SerializeField] private float attackFreq = 5f;
     [SerializeField] private float projectileSpeed = 0.5f;
     [SerializeField] private EnemyConstructor enemy;
-    [SerializeField] private Rigidbody projectile;
+    [SerializeField] private GameObject projectile;
     [SerializeField] private Vector3 playerLocation;
     [SerializeField] private GameObject player;
     [SerializeField] private ObjectPool<GameObject> pool;
@@ -15,17 +15,25 @@ public class TwisterFire : MonoBehaviour
     [SerializeField] private float minPlayerDistance = 10f;
     [SerializeField] private float maxPlayerDistance = 70f;
     [SerializeField] private float distanceToPlayer;
+    [SerializeField] private float projectileLifespan;
     [SerializeField] private Player[] players;
     private Coroutine attackRoutine;
-
+    [SerializeField] private ConstructorConjunction constructors;
 
     private void Start()
     {
+        attackFreq = constructors.GetAttackFreq();
+        projectileSpeed = constructors.GetProjectileSpeed();
+        projectile = constructors.GetProjectile();
+        minPlayerDistance = constructors.GetMinDistance();
+        maxPlayerDistance = constructors.GetMaxDistance();
+        projectileLifespan = constructors.GetProjectileLifespan();
         StartAttackRoutine();
     }
 
     private void Awake()
     {
+        constructors = GetComponent<ConstructorConjunction>();
         EnsurePlayerReference();
     }
 
@@ -121,11 +129,17 @@ public class TwisterFire : MonoBehaviour
             return;
         }
 
-        playerLocation = closestPlayer.transform.position - transform.position + new Vector3(0f, 0.5f, 0f);
-        Rigidbody ball;
-        ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 0f), Quaternion.identity, Pooler.PoolType.bullets);
-        ball.linearVelocity = transform.TransformDirection(playerLocation * projectileSpeed);
+        Vector3 directionToPlayer = closestPlayer.transform.position - transform.position;
+        GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 0f), Quaternion.identity, Pooler.PoolType.bullets);
+        Rigidbody ballRb = ball.GetComponent<Rigidbody>();
+        ballRb.linearVelocity = directionToPlayer * projectileSpeed;
+        StartCoroutine(SelfDestruct(ball, projectileLifespan));    
         //Debug.Log("Pew");
     }
-        
+
+    private IEnumerator SelfDestruct(GameObject obj, float projectileLifespan)
+    {
+        yield return new WaitForSeconds(projectileLifespan);
+        Pooler.ReleaseObjectToPool(obj, Pooler.PoolType.bullets);
+    }  
 }

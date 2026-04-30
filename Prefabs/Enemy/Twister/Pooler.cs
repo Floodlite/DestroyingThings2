@@ -8,13 +8,15 @@ public class Pooler : MonoBehaviour
     private GameObject emptyPool;
     private static GameObject bullets;
     private static GameObject objects;
+    private static GameObject traps;
     private static Dictionary<GameObject, ObjectPool<GameObject>> poolDict;
     private static Dictionary<GameObject, GameObject> cloneDict;
 
     public enum PoolType
     {
         bullets,
-        objects
+        objects,
+        traps,
     }
 
     public static PoolType PoolingType;
@@ -33,6 +35,8 @@ public class Pooler : MonoBehaviour
         bullets.transform.SetParent(emptyPool.transform);
         objects = new GameObject("Objects");
         objects.transform.SetParent(emptyPool.transform);
+        traps = new GameObject("Objects");
+        traps.transform.SetParent(emptyPool.transform);
         
         if(doNotDestroyOnLoad) { DontDestroyOnLoad(emptyPool.transform.root); }
     }
@@ -105,6 +109,8 @@ public class Pooler : MonoBehaviour
                 return bullets;
             case PoolType.objects:
                 return objects;
+            case PoolType.traps:
+                return traps;
             default:
                 return null;
         }

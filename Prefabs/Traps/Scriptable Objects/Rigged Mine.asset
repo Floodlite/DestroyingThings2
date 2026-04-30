@@ -15,3 +15,4 @@ MonoBehaviour:
   name: Rigged Landmine
   trapDamage: 3
   armTime: 0.75
+  explosionForce: 8

@@ -7,9 +7,9 @@ public class ProjectileExpiration : MonoBehaviour
 
     private void OnEnable()
     {
-        StartCoroutine(SelfDestruct(projectileLifespan));
-        
+        StartCoroutine(SelfDestruct(projectileLifespan));    
     }
+
     private IEnumerator SelfDestruct(float projectileLifespan)
     {
         yield return new WaitForSeconds(projectileLifespan);

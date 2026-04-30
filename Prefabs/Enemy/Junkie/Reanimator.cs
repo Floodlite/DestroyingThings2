@@ -16,7 +16,12 @@ public class Reanimator : MonoBehaviour
     public void SetDeathStatus(bool aliveOrDead)
     {
         dead = aliveOrDead;
-        Debug.Log("Switched to " + aliveOrDead);
+        //Debug.Log("Switched to " + aliveOrDead);
+    }
+
+    public bool IsDead()
+    {
+        return dead;
     }
 
     private void OnTriggerEnter(Collider other)

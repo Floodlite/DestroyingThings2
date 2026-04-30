@@ -6,5 +6,5 @@ public class TrapConstructor : ScriptableObject
     public new string name;
     public int trapDamage;
     public float armTime;
-
+    public float explosionForce;
 }
