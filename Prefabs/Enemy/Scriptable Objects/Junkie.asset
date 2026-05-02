@@ -17,3 +17,5 @@ MonoBehaviour:
   enemySpeed: 3
   enemyHealth: 3
   image: {fileID: 0}
+  dangerValue: 2
+  special: 1
