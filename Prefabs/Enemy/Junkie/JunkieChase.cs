@@ -6,15 +6,24 @@ public class JunkieChase : MonoBehaviour
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private GameObject player;
     [SerializeField] private Vector3 targetLocation;
-    [SerializeField] private EnemyConstructor enemy;
     [SerializeField] private Player[] players;
     [SerializeField] private Reanimator[] corpses;
-    [SerializeField] private float navSampleRadius = 2f;
+    [SerializeField] private ConstructorConjunction constructors;
 
+    private void Awake()
+    {
+        constructors = GetComponent<ConstructorConjunction>();
+    }
 
     private void Start()
     {
-        agent.speed = enemy.enemySpeed;
+        if(constructors != null) {
+            agent.speed = constructors.GetSpeed();
+        }
+        else
+        {
+            agent.speed = 15f;
+        }
     }
 
     private Player FindClosestPlayer()
@@ -36,6 +45,11 @@ public class JunkieChase : MonoBehaviour
                 closestDistance = distanceToPlayer;
                 indexOfClosest = i;
             }
+        }
+
+        if(closestDistance == 99999)
+        {
+            return null;
         }
         return players[indexOfClosest];
     }
@@ -73,7 +87,11 @@ public class JunkieChase : MonoBehaviour
                 indexOfClosest = i;
             }
         }
-        return corpses[indexOfClosest].transform;
+        if(closestDistance == 99999)
+        {
+            return null;
+        }
+        return corpses[indexOfClosest].GetComponentInChildren<EnemyHealth>(true).transform;
     } 
 
     private void Update()
@@ -94,11 +112,7 @@ public class JunkieChase : MonoBehaviour
                 return; 
             }
         }
-
-        if (NavMesh.SamplePosition(targetLocation, out NavMeshHit hit, navSampleRadius, NavMesh.AllAreas))
-        {
-            agent.SetDestination(hit.position);
-        }
+        agent.SetDestination(targetLocation);
     }
 }
 

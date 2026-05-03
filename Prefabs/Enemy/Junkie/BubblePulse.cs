@@ -9,13 +9,15 @@ public class JunkiePulse : MonoBehaviour
     private float attackSpeed = 1f;
     private Coroutine attackRoutine;
     private float startRadius;
-    [SerializeField] private float endSizeMultiplier = 6f;
+    [SerializeField] private float endSizeMultiplier = 4f;
 
 
     private void Start()
     {
         hurtBox = this.gameObject;
-        //hurtBox = FindHurtBox(transform.parent.gameObject);
+        if(hurtBox == null) {
+            hurtBox = FindHurtBox(transform.parent.gameObject);
+        }
         startRadius = hurtBox.transform.localScale.x;
         StartAttackRoutine();
     }
