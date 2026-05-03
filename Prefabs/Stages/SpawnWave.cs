@@ -8,6 +8,7 @@ public class SpawnWave : MonoBehaviour
     [SerializeField] private Dictionary<GameObject, bool> spawnPoints = new Dictionary<GameObject, bool>();
     [SerializeField] private List<GameObject> enemyPool = new List<GameObject>(); //Assign in inspector
     [SerializeField] private float maxDanger;
+    [SerializeField] private float currentDanger;
 
     private void Awake()
     {
@@ -42,7 +43,7 @@ public class SpawnWave : MonoBehaviour
 
     private void ChooseEnemies()
     {
-        float currentDanger = 0f;
+        currentDanger = 0f;
         bool specialFound = false;
         int maxSpawnPoints = spawnPoints.Count;
         int enemiesSpawned = 0;
@@ -62,7 +63,7 @@ public class SpawnWave : MonoBehaviour
             if(constructors.IsSpecial() && !specialFound) { 
                 specialFound = true; 
             }
-            else
+            else if(constructors.IsSpecial() && specialFound)
             {
                 continue;
             }
