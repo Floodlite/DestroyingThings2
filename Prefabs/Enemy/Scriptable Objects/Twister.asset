@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   name: Twister
   enemyDamage: 2
-  enemySpeed: 1
+  enemySpeed: 10
   enemyHealth: 2
   image: {fileID: 21300000, guid: af0ae2dbf3d1efb4f82af377950704a2, type: 3}
   dangerValue: 2

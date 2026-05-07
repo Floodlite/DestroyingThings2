@@ -10,7 +10,7 @@ public class EnemyRetreat : MonoBehaviour
     [SerializeField] private Player[] players;
     [SerializeField] private float retreatDistance = 16f;
     [SerializeField] private float navSampleRadius = 4f;
-    [SerializeField] private bool retreatMode= false;
+    [SerializeField] private bool retreatMode = true;
     [SerializeField] private ConstructorConjunction constructors;
     private float agentSpeed;
     
@@ -56,10 +56,11 @@ public class EnemyRetreat : MonoBehaviour
             agent.ResetPath(); 
             return; 
         }
+        playerLocation = closestPlayer.transform.position;
         
         float distance = Vector3.Distance(transform.position, closestPlayer.transform.position);
         //Debug.Log(distance);
-        if(distance < constructors.GetMinDistance()) { 
+        if(distance * 1.5f < constructors.GetMinDistance()) { 
             retreatMode = true; 
         }
         else { 
@@ -70,7 +71,7 @@ public class EnemyRetreat : MonoBehaviour
             Vector3 fromPlayer = (transform.position - closestPlayer.transform.position).normalized;
             Vector3 retreatTarget = transform.position + fromPlayer * retreatDistance;
 
-            if(NavMesh.SamplePosition(retreatTarget, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            if(NavMesh.SamplePosition(retreatTarget, out NavMeshHit hit, navSampleRadius, NavMesh.AllAreas))
             {
                 agent.speed *= 2.5f;
                 agent.SetDestination(hit.position);

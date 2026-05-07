@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class EnemyHealth : MonoBehaviour
 {
-    [SerializeField] private EnemyConstructor enemy;
+    [SerializeField] private ConstructorConjunction constructors;
     [SerializeField] private int maxHealth = 3;
     [SerializeField] private int health = 3;
     [SerializeField] private Transform enemyRoot;
@@ -72,13 +72,20 @@ public class EnemyHealth : MonoBehaviour
         {
             enemyRoot = transform.parent != null ? transform.parent : transform;
         }
-
+        constructors = GetComponentInParent<ConstructorConjunction>();
         reanimator = GetComponentInParent<Reanimator>();
     }
 
     private void Start()
     {
-        maxHealth = enemy.enemyHealth;
+        if(constructors != null) {
+            maxHealth = constructors.GetMaxHealth();
+        }
+        else
+        {
+            maxHealth = 4;    
+        }
+
         if (maxHealth < 1)
         {
             maxHealth = 2;
@@ -252,6 +259,7 @@ public class EnemyHealth : MonoBehaviour
 
     public void Resurrect()
     {
+        Debug.Log("Resurrected " + gameObject.name);
         if (!isDead)
         {
             return;

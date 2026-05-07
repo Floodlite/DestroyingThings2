@@ -7,13 +7,19 @@ public class SpawnWave : MonoBehaviour
     //Object records the spawn point itself, boolean tracks whether the spot is taken (false --> empty, true --> filled)
     [SerializeField] private Dictionary<GameObject, bool> spawnPoints = new Dictionary<GameObject, bool>();
     [SerializeField] private List<GameObject> enemyPool = new List<GameObject>(); //Assign in inspector
-    [SerializeField] private float maxDanger;
-    [SerializeField] private float currentDanger;
+    
+    [SerializeField] private float maxDanger = 8f;
+    [SerializeField] private float currentDanger = 0f;
+
+    [SerializeField] private int currentWave = 1;
+
+    [SerializeField] private int maxWave = 8;
 
     private void Awake()
     {
         spawnPoints = SetSpawns(this.transform, "Spawn");
         if(maxDanger == 0f) { maxDanger = 8f; }
+        currentWave = 1;
     }
 
     private void Start()
@@ -24,6 +30,15 @@ public class SpawnWave : MonoBehaviour
     public void Activate()
     {
         ChooseEnemies();
+    }
+
+    private void LateUpdate()
+    {
+        if(AreEnemiesAlive())
+        {
+            return;
+        }
+        NextWave(2f);
     }
 
     private Dictionary<GameObject, bool> SetSpawns(Transform parent, string tag)
@@ -93,6 +108,30 @@ public class SpawnWave : MonoBehaviour
             //May need to be cleaned up for NavMesh matters
             Instantiate(enemyToSpawn, key.transform.position, key.transform.rotation);
             spawnPoints[key] = true;
+        }
+    }
+
+    private bool AreEnemiesAlive()
+    {
+        //Switch to FindObjectsSortMode.None if performance issues arise
+        EnemyHealth[] enemies = FindObjectsByType<EnemyHealth>(FindObjectsSortMode.InstanceID);
+        if(enemies == null || enemies.Length < 1)
+        {
+            return false;
+        }
+        return true;
+    }
+
+    private void NextWave(float dangerIncrease=2f)
+    {
+        if(currentWave + 1 > maxWave)
+        {
+            Debug.Log("All waves cleared!");
+        }
+        else {
+            currentWave++;
+            maxDanger += dangerIncrease;
+            ChooseEnemies();
         }
     }
 }

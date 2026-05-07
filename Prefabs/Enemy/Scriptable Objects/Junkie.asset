@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   name: Junkie
   enemyDamage: 1
-  enemySpeed: 3
+  enemySpeed: 10
   enemyHealth: 3
   image: {fileID: 0}
   dangerValue: 2
