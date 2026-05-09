@@ -8,5 +8,6 @@ public class EnemyConstructor : ScriptableObject
     public int enemySpeed;
     public int enemyHealth;
     public Sprite image;
-
+    public float dangerValue;
+    public bool special;
 }

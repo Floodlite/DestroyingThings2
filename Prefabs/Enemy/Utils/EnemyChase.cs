@@ -6,14 +6,25 @@ public class EnemyChase : MonoBehaviour
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private GameObject player;
     [SerializeField] private Vector3 playerLocation;
-    [SerializeField] private EnemyConstructor enemy;
     [SerializeField] private Player[] players;
     [SerializeField] private float navSampleRadius = 2f;
+    [SerializeField] private ConstructorConjunction constructors;
 
+
+    private void Awake()
+    {
+        constructors = GetComponent<ConstructorConjunction>();
+    }
 
     private void Start()
     {
-        agent.speed = enemy.enemySpeed;
+        if(constructors != null) {
+            agent.speed = constructors.GetSpeed();
+        }
+        else
+        {
+            agent.speed = 15f;
+        }
     }
 
     private Player FindClosestPlayer()

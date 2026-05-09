@@ -17,3 +17,5 @@ MonoBehaviour:
   enemySpeed: 60
   enemyHealth: 4
   image: {fileID: 21300000, guid: 90ded0611e490aa4ba6961afbfc2280d, type: 3}
+  dangerValue: 4
+  special: 0

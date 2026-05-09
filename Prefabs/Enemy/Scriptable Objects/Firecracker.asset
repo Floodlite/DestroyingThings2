@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   name: Firecracker
   enemyDamage: 1
-  enemySpeed: 1
+  enemySpeed: 10
   enemyHealth: 2
   image: {fileID: 0}
+  dangerValue: 3
+  special: 0
