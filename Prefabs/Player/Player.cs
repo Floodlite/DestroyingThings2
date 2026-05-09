@@ -1,9 +1,6 @@
-using JetBrains.Annotations;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
-using System;
 
 public class Player : MonoBehaviour
 {
