@@ -15,6 +15,14 @@ public class TrapHurtBox : MonoBehaviour
         if (!other.CompareTag("Player") && !other.CompareTag("Enemy")) {
             return;
         }
+        if(other.CompareTag("Enemy")) {
+            ConstructorConjunction otherEnemy = other.GetComponentInChildren<ConstructorConjunction>();
+            if(otherEnemy.GetName().Equals("Firecracker"))
+            {
+                return;
+            }
+        }
+
         Debug.Log("Exploded: " + other.name);
         PlayerHealth playerHealth = other.GetComponentInParent<PlayerHealth>();
         EnemyHealth enemyHealth = other.GetComponentInChildren<EnemyHealth>();
