@@ -9,6 +9,11 @@ public class Pooler : MonoBehaviour
     private static GameObject bullets;
     private static GameObject objects;
     private static GameObject traps;
+<<<<<<< Updated upstream
+=======
+    private static GameObject waveEnemies;
+    private static GameObject spawnedEnemies;
+>>>>>>> Stashed changes
     private static Dictionary<GameObject, ObjectPool<GameObject>> poolDict;
     private static Dictionary<GameObject, GameObject> cloneDict;
 
@@ -17,6 +22,11 @@ public class Pooler : MonoBehaviour
         bullets,
         objects,
         traps,
+<<<<<<< Updated upstream
+=======
+        waveEnemies,
+        spawnedEnemies,
+>>>>>>> Stashed changes
     }
 
     public static PoolType PoolingType;
@@ -35,8 +45,17 @@ public class Pooler : MonoBehaviour
         bullets.transform.SetParent(emptyPool.transform);
         objects = new GameObject("Objects");
         objects.transform.SetParent(emptyPool.transform);
+<<<<<<< Updated upstream
         traps = new GameObject("Objects");
         traps.transform.SetParent(emptyPool.transform);
+=======
+        traps = new GameObject("Traps");
+        traps.transform.SetParent(emptyPool.transform);
+        waveEnemies = new GameObject("Wave Enemies");
+        waveEnemies.transform.SetParent(emptyPool.transform);
+        spawnedEnemies = new GameObject("Spawned Enemies");
+        spawnedEnemies.transform.SetParent(emptyPool.transform);
+>>>>>>> Stashed changes
         
         if(doNotDestroyOnLoad) { DontDestroyOnLoad(emptyPool.transform.root); }
     }
