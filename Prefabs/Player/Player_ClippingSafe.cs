@@ -68,6 +68,20 @@ public class PlayerClippingSafe : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         cachedCollider = GetComponent<Collider>();
         destroyer = new Destroyer();
+        move = destroyer.Player.Move;
+
+        if (playerCamera == null)
+        {
+            playerCamera = Camera.main;
+        }
+
+        // Add the Hoof_It modifier binding once at initialization, not every enable.
+        destroyer.Player.Hoof_It.AddCompositeBinding("OneModifier")
+            .With("Binding", "<Keyboard>/W")
+            .With("Binding", "<Keyboard>/A")
+            .With("Binding", "<Keyboard>/S")
+            .With("Binding", "<Keyboard>/D")
+            .With("Modifier", "<Keyboard>/H");
 
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
@@ -110,12 +124,6 @@ public class PlayerClippingSafe : MonoBehaviour
 
         destroyer.Player.Hoof_It.started += HoofIt;
         destroyer.Player.Hoof_It.Enable();
-        destroyer.Player.Hoof_It.AddCompositeBinding("OneModifier")
-            .With("Binding", "<Keyboard>/W")
-            .With("Binding", "<Keyboard>/A")
-            .With("Binding", "<Keyboard>/S")
-            .With("Binding", "<Keyboard>/D")
-            .With("Modifier", "<Keyboard>/H");
 
         destroyer.Player.Escape.performed += GetOut;
         destroyer.Player.Escape.Enable();
@@ -144,22 +152,33 @@ public class PlayerClippingSafe : MonoBehaviour
         destroyer.Player.Disable();
     }
 
+
     private void FixedUpdate()
     {
+        if (move == null)
+        {
+            move = destroyer?.Player.Move;
+        }
+
+        if (move == null)
+        {
+            return;
+        }
+
         yourSpeed = moveSpeed * storedSpeed * airborneMovement * accelSpeed;
         Vector2 moveInput = move.ReadValue<Vector2>();
-        Vector3 desiredMoveForce = Vector3.zero;
-        desiredMoveForce += moveInput.x * GetCameraR(playerCamera) * yourSpeed;
-        desiredMoveForce += moveInput.y * GetCameraF(playerCamera) * yourSpeed;
-        moveDirection = desiredMoveForce;
-        movingDirection = desiredMoveForce;
+        moveDirection += moveInput.x * GetCameraR(playerCamera) * yourSpeed;
+        moveDirection += moveInput.y * GetCameraF(playerCamera) * yourSpeed;
+        movingDirection = moveDirection;
 
         if (drifting)
         {
             transform.rotation *= Quaternion.AngleAxis(15f, Vector3.up);
         }
 
-        rb.AddForce(desiredMoveForce, ForceMode.Acceleration);
+        rb.AddForce(moveDirection, ForceMode.Impulse);
+        rb.AddForce(moveDirection, ForceMode.Acceleration);
+        moveDirection = Vector3.zero;
         ProcessQueuedMovementActions(moveInput);
 
         if (rb.linearVelocity.y < 0f)
@@ -231,15 +250,18 @@ public class PlayerClippingSafe : MonoBehaviour
         Vector3 predictedVelocity = rb.linearVelocity + (impulse / safeMass);
         Vector3 predictedDisplacement = predictedVelocity * Time.fixedDeltaTime;
 
-        if (TrySweep(predictedDisplacement, out RaycastHit sweepHit))
+        Vector3 horizontalDisplacement = new Vector3(predictedDisplacement.x, 0f, predictedDisplacement.z);
+        
+        if (horizontalDisplacement.sqrMagnitude > 0.01f && TrySweep(horizontalDisplacement, out RaycastHit sweepHit))
         {
             float safeDistance = Mathf.Max(0f, sweepHit.distance - collisionSkin);
-            if (safeDistance > 0f && predictedDisplacement.sqrMagnitude > 0f)
+            if (safeDistance > 0f && horizontalDisplacement.sqrMagnitude > 0f)
             {
-                rb.position += predictedDisplacement.normalized * safeDistance;
+                rb.position += horizontalDisplacement.normalized * safeDistance;
             }
 
-            rb.linearVelocity = Vector3.ProjectOnPlane(predictedVelocity, sweepHit.normal);
+            Vector3 horizontalVelocity = Vector3.ProjectOnPlane(predictedVelocity, sweepHit.normal);
+            rb.linearVelocity = new Vector3(horizontalVelocity.x, predictedVelocity.y, horizontalVelocity.z);
             return;
         }
 

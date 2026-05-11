@@ -10,6 +10,7 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private Transform enemyRoot;
     [SerializeField] private bool isDead = false;
     public bool IsDead => isDead;
+    private SpawnWave waveSpawner;
 
     private Reanimator reanimator;
     private readonly List<Behaviour> pausedBehaviours = new List<Behaviour>();
@@ -74,6 +75,7 @@ public class EnemyHealth : MonoBehaviour
         }
         constructors = GetComponentInParent<ConstructorConjunction>();
         reanimator = GetComponentInParent<Reanimator>();
+        waveSpawner = FindObjectsByType<SpawnWave>(FindObjectsSortMode.None)[0];
     }
 
     private void Start()
@@ -91,6 +93,8 @@ public class EnemyHealth : MonoBehaviour
             maxHealth = 2;
         }
         ResetHP();
+
+        waveSpawner.AddToEnemiesAlive(this.transform.parent.gameObject);
     }
 
     public int RetrieveHP(bool returnHP)
@@ -141,6 +145,8 @@ public class EnemyHealth : MonoBehaviour
         StopMovement();
         MakeIntangible();
         StopEnemyBehaviours();
+
+        waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
     }
 
     private void StopMovement()
@@ -259,7 +265,7 @@ public class EnemyHealth : MonoBehaviour
 
     public void Resurrect()
     {
-        Debug.Log("Resurrected " + gameObject.name);
+        Debug.Log("Resurrected: " + gameObject.name);
         if (!isDead)
         {
             return;
@@ -279,6 +285,8 @@ public class EnemyHealth : MonoBehaviour
         isDead = false;
         maxHealth = Mathf.Max(1, maxHealth-=1);
         ResetHP();
+
+        waveSpawner.AddToEnemiesAlive(this.transform.parent.gameObject);
     }
 
     private void RestoreRigidbodies()

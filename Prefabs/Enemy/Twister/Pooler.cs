@@ -9,24 +9,21 @@ public class Pooler : MonoBehaviour
     private static GameObject bullets;
     private static GameObject objects;
     private static GameObject traps;
-<<<<<<< Updated upstream
-=======
     private static GameObject waveEnemies;
     private static GameObject spawnedEnemies;
->>>>>>> Stashed changes
     private static Dictionary<GameObject, ObjectPool<GameObject>> poolDict;
     private static Dictionary<GameObject, GameObject> cloneDict;
 
+    /// <summary>
+    ///<b>PSA</b>: Every time you add a new pool type, remember to add it to the switch statement in <b>SetParentObject</b> down below
+    /// </summary>
     public enum PoolType
     {
         bullets,
         objects,
         traps,
-<<<<<<< Updated upstream
-=======
         waveEnemies,
         spawnedEnemies,
->>>>>>> Stashed changes
     }
 
     public static PoolType PoolingType;
@@ -45,17 +42,12 @@ public class Pooler : MonoBehaviour
         bullets.transform.SetParent(emptyPool.transform);
         objects = new GameObject("Objects");
         objects.transform.SetParent(emptyPool.transform);
-<<<<<<< Updated upstream
-        traps = new GameObject("Objects");
-        traps.transform.SetParent(emptyPool.transform);
-=======
         traps = new GameObject("Traps");
         traps.transform.SetParent(emptyPool.transform);
         waveEnemies = new GameObject("Wave Enemies");
         waveEnemies.transform.SetParent(emptyPool.transform);
         spawnedEnemies = new GameObject("Spawned Enemies");
         spawnedEnemies.transform.SetParent(emptyPool.transform);
->>>>>>> Stashed changes
         
         if(doNotDestroyOnLoad) { DontDestroyOnLoad(emptyPool.transform.root); }
     }
@@ -130,6 +122,10 @@ public class Pooler : MonoBehaviour
                 return objects;
             case PoolType.traps:
                 return traps;
+            case PoolType.waveEnemies:
+                return waveEnemies;
+            case PoolType.spawnedEnemies:
+                return spawnedEnemies;
             default:
                 return null;
         }

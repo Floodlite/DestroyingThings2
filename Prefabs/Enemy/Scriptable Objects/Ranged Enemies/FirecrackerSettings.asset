@@ -15,6 +15,7 @@ MonoBehaviour:
   name: Firecracker
   minPlayerDistance: 12
   maxPlayerDistance: 90
+  retreatMultiplier: 1
   attackFrequency: 2.5
   projectileSpeed: 0.8
   projectileLifespan: 30

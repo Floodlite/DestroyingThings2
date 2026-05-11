@@ -7,7 +7,11 @@ public class SpawnWave : MonoBehaviour
     //Object records the spawn point itself, boolean tracks whether the spot is taken (false --> empty, true --> filled)
     [SerializeField] private Dictionary<GameObject, bool> spawnPoints = new Dictionary<GameObject, bool>();
     [SerializeField] private List<GameObject> enemyPool = new List<GameObject>(); //Assign in inspector
-    
+    [SerializeField] private List<GameObject> enemiesOfWave = new List<GameObject>();
+    [SerializeField] private List<GameObject> enemiesAlive = new List<GameObject>();
+    [SerializeField] private bool everyoneDead = false;
+    [SerializeField] private bool doneChoosing = false;
+
     [SerializeField] private float maxDanger = 8f;
     [SerializeField] private float currentDanger = 0f;
 
@@ -20,25 +24,22 @@ public class SpawnWave : MonoBehaviour
         spawnPoints = SetSpawns(this.transform, "Spawn");
         if(maxDanger == 0f) { maxDanger = 8f; }
         currentWave = 1;
+        doneChoosing = false;
     }
 
     private void Start()
-    {
-        Activate();
-    }
-
-    public void Activate()
     {
         ChooseEnemies();
     }
 
     private void LateUpdate()
     {
-        if(AreEnemiesAlive())
+        everyoneDead = AllEnemiesDead();
+        if(everyoneDead && doneChoosing)
         {
-            return;
+            NextWave(2f);
+            doneChoosing = false;
         }
-        NextWave(2f);
     }
 
     private Dictionary<GameObject, bool> SetSpawns(Transform parent, string tag)
@@ -61,7 +62,8 @@ public class SpawnWave : MonoBehaviour
         currentDanger = 0f;
         bool specialFound = false;
         int maxSpawnPoints = spawnPoints.Count;
-        int enemiesSpawned = 0;
+        int enemiesInWave = 0;
+
         while(currentDanger < maxDanger)
         {
             int chosenIndex = Random.Range(0, enemyPool.Count-1);
@@ -72,7 +74,7 @@ public class SpawnWave : MonoBehaviour
             //if(enemy == null) { Debug.LogWarning("Constructors not found on " + chosenObject);  continue; }
             float enemyDangerValue = constructors.GetDangerValue();
 
-            if(enemyDangerValue + currentDanger > maxDanger) { 
+            if(currentDanger + enemyDangerValue > maxDanger) { 
                 continue; 
             }
             if(constructors.IsSpecial() && !specialFound) { 
@@ -85,13 +87,16 @@ public class SpawnWave : MonoBehaviour
 
             SpawnEnemy(chosenObject);
             currentDanger += enemyDangerValue;
+            Debug.Log("Current Danger: (" + chosenObject + ") " + (currentDanger - enemyDangerValue) + " --> " + currentDanger);
 
-            enemiesSpawned++;
-            if(enemiesSpawned >= maxSpawnPoints)
+            enemiesInWave++;
+            if(enemiesInWave >= maxSpawnPoints)
             {
                 break;
             }
         }
+        doneChoosing = true;
+        return;
     }
 
     private void SpawnEnemy(GameObject enemyToSpawn)
@@ -106,24 +111,70 @@ public class SpawnWave : MonoBehaviour
             }
 
             //May need to be cleaned up for NavMesh matters
-            Instantiate(enemyToSpawn, key.transform.position, key.transform.rotation);
+            GameObject spawnedInstance = Pooler.SpawnObject(enemyToSpawn, key.transform.position + new Vector3(0f, 0f, 0f), key.transform.rotation, Pooler.PoolType.waveEnemies);
+            if(spawnedInstance != null)
+            {
+                enemiesOfWave.Add(spawnedInstance);
+            }
             spawnPoints[key] = true;
         }
     }
 
-    private bool AreEnemiesAlive()
+    /*
+    private bool AllEnemiesDead()
     {
         //Switch to FindObjectsSortMode.None if performance issues arise
-        EnemyHealth[] enemies = FindObjectsByType<EnemyHealth>(FindObjectsSortMode.InstanceID);
-        if(enemies == null || enemies.Length < 1)
+        enemiesAlive = FindObjectsByType<Reanimator>(FindObjectsSortMode.InstanceID);
+        foreach(Reanimator script in enemiesAlive)
         {
-            return false;
+            if(!script.IsDead()) {
+                return false;
+            }
+            //TODO: Remove enemies from their pool and change the length of the array accordingly
         }
         return true;
+    }
+    */
+
+    private bool AllEnemiesDead()
+    {
+        if(enemiesAlive.Count < 1)
+        {   
+            Debug.Log("Everyone is dead");
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    public void AddToEnemiesAlive(GameObject enemyToAdd)
+    {
+        enemiesAlive.Add(enemyToAdd);
+    }
+
+    public void RemoveFromEnemiesAlive(GameObject enemyToRemove)
+    {
+        enemiesAlive.Remove(enemyToRemove);
+    }
+
+    private void ClearWaveEnemies()
+    {
+        foreach(GameObject enemy in enemiesOfWave) {
+            Pooler.ReleaseObjectToPool(enemy, Pooler.PoolType.waveEnemies);
+        }
     }
 
     private void NextWave(float dangerIncrease=2f)
     {
+        ClearWaveEnemies();
+
+        //Reset spawn points
+        foreach(GameObject key in spawnPoints.Keys.ToList())
+        {
+            spawnPoints[key] = false;
+        }
+        
         if(currentWave + 1 > maxWave)
         {
             Debug.Log("All waves cleared!");

@@ -15,6 +15,7 @@ MonoBehaviour:
   name: Twister
   minPlayerDistance: 10
   maxPlayerDistance: 70
+  retreatMultiplier: 0.25
   attackFrequency: 5
   projectileSpeed: 0.5
   projectileLifespan: 5

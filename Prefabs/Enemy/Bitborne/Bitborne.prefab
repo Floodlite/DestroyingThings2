@@ -845,9 +845,9 @@ MonoBehaviour:
   agent: {fileID: 5831179946085208234}
   player: {fileID: 0}
   playerLocation: {x: 0, y: 0, z: 0}
-  enemy: {fileID: 11400000, guid: 374cd53b29fb97d4b9dee6a9f58dd889, type: 2}
   players: []
   navSampleRadius: 2
+  constructors: {fileID: 0}
 --- !u!114 &3580187564501117526
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -860,7 +860,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 319c7fceed256ab41bafc56a4b65be4e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
-  enemy: {fileID: 11400000, guid: 374cd53b29fb97d4b9dee6a9f58dd889, type: 2}
+  constructors: {fileID: 0}
   maxHealth: 8
   health: 8
   enemyRoot: {fileID: 0}

@@ -73,6 +73,12 @@ public class ConstructorConjunction : MonoBehaviour
         return rangedEnemy.maxPlayerDistance;
     }
 
+    public float GetRetreatMultiplier()
+    {
+        if(rangedEnemy == null) { return 1.15f; }
+        return rangedEnemy.retreatMultiplier;
+    }
+
     public float GetAttackFreq()
     {
         if(rangedEnemy == null) { return 5f; }

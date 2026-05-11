@@ -58,9 +58,9 @@ public class EnemyRetreat : MonoBehaviour
         }
         playerLocation = closestPlayer.transform.position;
         
-        float distance = Vector3.Distance(transform.position, closestPlayer.transform.position);
+        float distance = Vector3.Distance(this.transform.position, closestPlayer.transform.position);
         //Debug.Log(distance);
-        if(distance * 1.5f < constructors.GetMinDistance()) { 
+        if(distance * constructors.GetRetreatMultiplier() < constructors.GetMinDistance()) { 
             retreatMode = true; 
         }
         else { 

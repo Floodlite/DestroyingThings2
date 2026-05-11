@@ -177,11 +177,7 @@ public class FirecrackerFire : MonoBehaviour
             return;
         }
 
-<<<<<<< Updated upstream
-        GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 1f), Quaternion.identity, Pooler.PoolType.bullets);
-=======
         GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 1f), Quaternion.identity, Pooler.PoolType.traps);
->>>>>>> Stashed changes
         BezierCurve curve = ConstructCurve(transform.position + new Vector3(0f, 1f, 1f), closestPlayer.transform.position);
         Rigidbody ballRb = ball.GetComponent<Rigidbody>();
         ballRb.isKinematic = true;
