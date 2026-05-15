@@ -153,7 +153,7 @@ public class Player : MonoBehaviour
         }
 
         rb.AddForce(moveDirection, ForceMode.Impulse);
-        rb.AddForce(moveDirection, ForceMode.Acceleration);
+        //rb.AddForce(moveDirection, ForceMode.Acceleration);
         moveDirection = Vector3.zero; 
 
         if (rb.linearVelocity.y < 0f)
@@ -549,6 +549,9 @@ public class Player : MonoBehaviour
         return right.normalized;
     }
 
+
+    //Moved to ScoreHandler.cs
+    /*
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Target"))
@@ -570,6 +573,7 @@ public class Player : MonoBehaviour
             }
         }
     }
+    */
 
     
 
