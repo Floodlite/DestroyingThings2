@@ -19,3 +19,4 @@ MonoBehaviour:
   image: {fileID: 0}
   dangerValue: 2
   special: 1
+  points: 2

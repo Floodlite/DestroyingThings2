@@ -19,3 +19,4 @@ MonoBehaviour:
   image: {fileID: 21300000, guid: 90ded0611e490aa4ba6961afbfc2280d, type: 3}
   dangerValue: 4.5
   special: 0
+  points: 5

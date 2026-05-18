@@ -10,14 +10,14 @@ public class Player : MonoBehaviour
     public Rigidbody rb;
 
     [SerializeField] private float moveSpeed = 3f;
-    [SerializeField] private float jumpHeight = 30f;
+    [SerializeField] private float jumpHeight = 18f;
     [SerializeField] private float maxSpeed = 20f;
     [SerializeField] private float fallForce = 8f;
     [SerializeField] private float storedSpeed = 1f;
     [SerializeField] private float accelSpeed = 1f;
     [SerializeField] private float airborneMovement = 1f;
     [SerializeField] private float yourSpeed = 1f;
-    private float hoofSpeed = 24f;
+    private float hoofSpeed = 15f;
     //private bool hoofCooldown = false;
     [SerializeField] private bool sneaking = false;
     [SerializeField] private bool drifting = false;
@@ -60,7 +60,7 @@ public class Player : MonoBehaviour
         rb = this.GetComponent<Rigidbody>();
         destroyer = new Destroyer();
         Collider collider = GetComponent<Collider>();
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
@@ -262,7 +262,7 @@ public class Player : MonoBehaviour
     {
         if (Grounded() && !breakdanceMode)
         {
-            moveDirection += Vector3.up * jumpHeight * 1.75f;
+            moveDirection += Vector3.up * jumpHeight * 1.85f;
             moveDirection += transform.forward * jumpHeight * 2.5f;
             StartCoroutine(GroundCheck());
             Debug.Log("Go long");

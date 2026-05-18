@@ -11,6 +11,7 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private bool isDead = false;
     public bool IsDead => isDead;
     private SpawnWave waveSpawner;
+    [SerializeField] private Player lastAttackedBy;
 
     private Reanimator reanimator;
     private readonly List<Behaviour> pausedBehaviours = new List<Behaviour>();
@@ -75,7 +76,12 @@ public class EnemyHealth : MonoBehaviour
         }
         constructors = GetComponentInParent<ConstructorConjunction>();
         reanimator = GetComponentInParent<Reanimator>();
-        waveSpawner = FindObjectsByType<SpawnWave>(FindObjectsSortMode.None)[0];
+
+        SpawnWave[] waveSpawnerArray = FindObjectsByType<SpawnWave>(FindObjectsSortMode.InstanceID);
+        if(waveSpawnerArray != null)
+        {
+            waveSpawner = waveSpawnerArray[0];
+        }
     }
 
     private void Start()
@@ -147,6 +153,14 @@ public class EnemyHealth : MonoBehaviour
         StopEnemyBehaviours();
 
         waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
+
+        //Award points to the player who dealt the last blow
+        if(lastAttackedBy != null)
+        {
+            PlayerScoreHandler playerScoreScript = lastAttackedBy.gameObject.GetComponent<PlayerScoreHandler>();
+            playerScoreScript.AddPoints(constructors.GetPoints() * playerScoreScript.GetKillMultiplier());
+            playerScoreScript.AddToEnemiesKilled();
+        }
     }
 
     private void StopMovement()
@@ -384,7 +398,7 @@ public class EnemyHealth : MonoBehaviour
     }
 
 
-    //makes this enemy lose health when getting punched
+    //Makes this enemy lose health when getting punched
     private void OnTriggerEnter(Collider other)
     {
         if (isDead)
@@ -402,6 +416,7 @@ public class EnemyHealth : MonoBehaviour
         if (player != null)
         {
             LoseHP(player.GetDamage());
+            lastAttackedBy = player;
         }
     }
 }
