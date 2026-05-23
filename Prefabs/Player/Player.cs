@@ -36,7 +36,7 @@ public class Player : MonoBehaviour
 
     [SerializeField] private Vector3 gizmoCubeVector = new Vector3(0f, 1.5f, 0f);
 
-    [SerializeField] private bool targetGet = false;
+    //[SerializeField] private bool targetGet = false;
     [SerializeField] private GameObject targetAura;
     [SerializeField] private GameObject chargeAura;
 
@@ -153,6 +153,36 @@ public class Player : MonoBehaviour
         rb.AddForce(moveDirection, ForceMode.Acceleration);
         moveDirection = Vector3.zero; 
 
+        Vector3 clampedVelocity = rb.linearVelocity;
+        if (!Grounded()) {
+            Vector3 horizontalVel = clampedVelocity;
+            horizontalVel.y = 0;
+            float airborneMaxSpeed = maxSpeed * 0.5f;
+            if (horizontalVel.sqrMagnitude > airborneMaxSpeed * airborneMaxSpeed)
+            {
+                clampedVelocity = horizontalVel.normalized * airborneMaxSpeed + Vector3.up * clampedVelocity.y;
+                rb.linearVelocity = clampedVelocity;
+            }
+        }
+
+        //Clamp speeds
+        if(rb.linearVelocity.x > maxSpeed * 1.5)
+        {
+            rb.linearVelocity = new Vector3(Mathf.Clamp(rb.linearVelocity.x, 0, maxSpeed*1.5f), 
+                                    rb.linearVelocity.y, rb.linearVelocity.z);
+        }
+        if(rb.linearVelocity.y > maxSpeed * 1.5)
+        {
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 
+                                    Mathf.Clamp(rb.linearVelocity.y, 0, maxSpeed*1.5f), 
+                                    rb.linearVelocity.z);
+        }
+        if(rb.linearVelocity.z > maxSpeed * 1.5)
+        {
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, rb.linearVelocity.y,
+                                    Mathf.Clamp(rb.linearVelocity.z, 0, maxSpeed*1.5f));
+        }
+
         if (rb.linearVelocity.y < 0f)
         {
             rb.linearVelocity += Vector3.up * Physics.gravity.y * fallForce * Time.fixedDeltaTime;
@@ -259,8 +289,33 @@ public class Player : MonoBehaviour
     {
         if (Grounded() && !breakdanceMode)
         {
+<<<<<<< Updated upstream
             moveDirection += Vector3.up * jumpHeight * 1.75f;
             moveDirection += transform.forward * jumpHeight * 2.5f;
+=======
+            Vector3 upwardImpulse = Vector3.up * jumpHeight * 1.85f;
+            Vector3 forwardImpulse = transform.forward * jumpHeight * 2.5f;
+            
+            moveDirection += upwardImpulse;
+            
+            // Check if path is clear before going forwards
+            if (!IsPathBlocked(transform.forward, forwardImpulse.magnitude))
+            {
+                //Apply force in full
+                Debug.Log("Path clear, applying impulse");
+            }
+            else
+            {
+                //Apply force with reduction (TODO))
+                Debug.Log("Path BLOCKED, reducing impulse");
+            }
+
+            if (!IsPathBlocked(transform.forward, forwardImpulse.magnitude))
+            {
+                moveDirection += forwardImpulse;
+            }
+            
+>>>>>>> Stashed changes
             StartCoroutine(GroundCheck());
             Debug.Log("Go long");
         }
@@ -273,14 +328,28 @@ public class Player : MonoBehaviour
         {
             hoofRecharged = false;
             
-            moveDirection += move.ReadValue<Vector2>().x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed;
-            moveDirection += move.ReadValue<Vector2>().y * GetCameraF(playerCamera) * moveSpeed * hoofSpeed;
+            Vector2 moveInput = move.ReadValue<Vector2>();
+            Vector3 hoofDirection = moveInput.x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed
+                                 + moveInput.y * GetCameraF(playerCamera) * moveSpeed * hoofSpeed;
+            
+            moveDirection += hoofDirection;
             moveDirection += Vector3.down;
-            rb.AddForce(moveDirection, ForceMode.Impulse);
-            Debug.Log("Hoofing it: Strong");
+            
+            //Check if hoof direction is blocked
+            if (!IsPathBlocked(hoofDirection.normalized, hoofDirection.magnitude))
+            {
+                rb.AddForce(moveDirection, ForceMode.Impulse);
+                Debug.Log("Hoofing it: Strong");
+            }
+            else
+            {
+                //Path blocked, apply reduced impulse
+                rb.AddForce(moveDirection * 0.25f, ForceMode.Impulse);
+                Debug.Log("Hoofing it: Blocked");
+            }
+            
+            moveDirection = Vector3.zero;
             StartCoroutine(RechargeHoof());
-            //hoofCooldown = true;
-            //StartCoroutine(HoofWait(1.5f));
         }
         /*else if (Grounded() && !hoofCooldown)
         {
@@ -516,6 +585,22 @@ public class Player : MonoBehaviour
         hoofRecharged = true;
     }
 
+    private bool IsPathBlocked(Vector3 direction, float checkDistance)
+    {
+        if (direction.sqrMagnitude < 0.001f || checkDistance <= 0)
+            return false;
+        
+        direction = direction.normalized;
+        
+        // Use SphereCast to check if path is blocked
+        if (Physics.SphereCast(transform.position, 0.4f, direction, out RaycastHit hit, checkDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            // Only block if collision is far enough ahead (not micro-collisions)
+            return hit.distance > 0.05f;
+        }
+        
+        return false;
+    }
 
     private void LookDirection()
     {
