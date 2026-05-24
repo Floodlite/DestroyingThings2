@@ -10,14 +10,14 @@ public class Player : MonoBehaviour
     public Rigidbody rb;
 
     [SerializeField] private float moveSpeed = 3f;
-    [SerializeField] private float jumpHeight = 30f;
+    [SerializeField] private float jumpHeight = 18f;
     [SerializeField] private float maxSpeed = 20f;
     [SerializeField] private float fallForce = 8f;
     [SerializeField] private float storedSpeed = 1f;
     [SerializeField] private float accelSpeed = 1f;
     [SerializeField] private float airborneMovement = 1f;
     [SerializeField] private float yourSpeed = 1f;
-    private float hoofSpeed = 24f;
+    private float hoofSpeed = 15f;
     //private bool hoofCooldown = false;
     [SerializeField] private bool sneaking = false;
     [SerializeField] private bool drifting = false;
@@ -60,12 +60,15 @@ public class Player : MonoBehaviour
         rb = this.GetComponent<Rigidbody>();
         destroyer = new Destroyer();
         Collider collider = GetComponent<Collider>();
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
     void Start()
     {
         Debug.Log("It's destruction time");
     }
+
     private void OnEnable()
     {
 
@@ -149,38 +152,30 @@ public class Player : MonoBehaviour
             transform.rotation *= Quaternion.AngleAxis(15, Vector3.up);
         }
 
-        rb.AddForce(moveDirection, ForceMode.Impulse);
-        rb.AddForce(moveDirection, ForceMode.Acceleration);
+
+        rb.AddForce(moveDirection, ForceMode.Impulse); //IMPORTANT
+        
+        
+        //rb.AddForce(moveDirection, ForceMode.Acceleration);
         moveDirection = Vector3.zero; 
 
         Vector3 clampedVelocity = rb.linearVelocity;
         if (!Grounded()) {
             Vector3 horizontalVel = clampedVelocity;
             horizontalVel.y = 0;
-            float airborneMaxSpeed = maxSpeed * 0.5f;
+            float airborneMaxSpeed = maxSpeed * 0.7f; //Alters airborne speed
             if (horizontalVel.sqrMagnitude > airborneMaxSpeed * airborneMaxSpeed)
             {
                 clampedVelocity = horizontalVel.normalized * airborneMaxSpeed + Vector3.up * clampedVelocity.y;
                 rb.linearVelocity = clampedVelocity;
             }
-        }
-
-        //Clamp speeds
-        if(rb.linearVelocity.x > maxSpeed * 1.5)
-        {
-            rb.linearVelocity = new Vector3(Mathf.Clamp(rb.linearVelocity.x, 0, maxSpeed*1.5f), 
-                                    rb.linearVelocity.y, rb.linearVelocity.z);
-        }
-        if(rb.linearVelocity.y > maxSpeed * 1.5)
-        {
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 
-                                    Mathf.Clamp(rb.linearVelocity.y, 0, maxSpeed*1.5f), 
-                                    rb.linearVelocity.z);
-        }
-        if(rb.linearVelocity.z > maxSpeed * 1.5)
-        {
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, rb.linearVelocity.y,
-                                    Mathf.Clamp(rb.linearVelocity.z, 0, maxSpeed*1.5f));
+            
+            //Clamp downward velocity while airborne
+            float maxDownwardSpeed = maxSpeed * 0.5f;
+            if (rb.linearVelocity.y < -maxDownwardSpeed)
+            {
+                rb.linearVelocity = new Vector3(rb.linearVelocity.x, -maxDownwardSpeed, rb.linearVelocity.z);
+            }
         }
 
         if (rb.linearVelocity.y < 0f)
@@ -201,12 +196,12 @@ public class Player : MonoBehaviour
         }
     }
 
-    public float getPlayerSpeed()
+    public float GetPlayerSpeed()
     {
         return yourSpeed;
     }
 
-    public Vector3 getPlayerMoveDirection()
+    public Vector3 GetPlayerMoveDirection()
     {
         return movingDirection;
     }
@@ -280,7 +275,7 @@ public class Player : MonoBehaviour
         //It's time you learned how
         else
         {
-            moveDirection += Vector3.up * jumpHeight * 0.055f;
+            //moveDirection += Vector3.up * jumpHeight * 0.055f;
             //Air "hover"
         }
     }
@@ -289,33 +284,16 @@ public class Player : MonoBehaviour
     {
         if (Grounded() && !breakdanceMode)
         {
-<<<<<<< Updated upstream
-            moveDirection += Vector3.up * jumpHeight * 1.75f;
-            moveDirection += transform.forward * jumpHeight * 2.5f;
-=======
             Vector3 upwardImpulse = Vector3.up * jumpHeight * 1.85f;
             Vector3 forwardImpulse = transform.forward * jumpHeight * 2.5f;
             
             moveDirection += upwardImpulse;
-            
-            // Check if path is clear before going forwards
-            if (!IsPathBlocked(transform.forward, forwardImpulse.magnitude))
-            {
-                //Apply force in full
-                Debug.Log("Path clear, applying impulse");
-            }
-            else
-            {
-                //Apply force with reduction (TODO))
-                Debug.Log("Path BLOCKED, reducing impulse");
-            }
 
             if (!IsPathBlocked(transform.forward, forwardImpulse.magnitude))
             {
                 moveDirection += forwardImpulse;
             }
             
->>>>>>> Stashed changes
             StartCoroutine(GroundCheck());
             Debug.Log("Go long");
         }
@@ -596,7 +574,7 @@ public class Player : MonoBehaviour
         if (Physics.SphereCast(transform.position, 0.4f, direction, out RaycastHit hit, checkDistance, ~0, QueryTriggerInteraction.Ignore))
         {
             // Only block if collision is far enough ahead (not micro-collisions)
-            return hit.distance > 0.05f;
+            return hit.distance > 0.1f;
         }
         
         return false;
@@ -631,6 +609,9 @@ public class Player : MonoBehaviour
         return right.normalized;
     }
 
+
+    //Moved to ScoreHandler.cs
+    /*
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Target"))
@@ -652,6 +633,7 @@ public class Player : MonoBehaviour
             }
         }
     }
+    */
 
     
 
