@@ -148,10 +148,27 @@ public class EnemyHealth : MonoBehaviour
             reanimator.SetDeathStatus(true);
         }
 
+        //Award points to the player who dealt the last blow
+        if(lastAttackedBy != null)
+        {
+            PlayerScoreHandler playerScoreScript = lastAttackedBy.gameObject.GetComponentInChildren<PlayerScoreHandler>();
+            if(playerScoreScript != null) {
+                float pointsScored = constructors.GetPoints() * playerScoreScript.GetKillMultiplier();
+                playerScoreScript.AddPoints(pointsScored);
+                playerScoreScript.AddToEnemiesKilled();
+                Debug.Log(lastAttackedBy + ": +" + pointsScored + " points scored");
+            }
+            else
+            {
+                Debug.Log(playerScoreScript + " not found");
+            }
+        }
+
         StopMovement();
         MakeIntangible();
         StopEnemyBehaviours();
 
+<<<<<<< Updated upstream
         waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
 
         //Award points to the player who dealt the last blow
@@ -160,6 +177,10 @@ public class EnemyHealth : MonoBehaviour
             PlayerScoreHandler playerScoreScript = lastAttackedBy.gameObject.GetComponent<PlayerScoreHandler>();
             playerScoreScript.AddPoints(constructors.GetPoints() * playerScoreScript.GetKillMultiplier());
             playerScoreScript.AddToEnemiesKilled();
+=======
+        if(waveSpawner != null) {
+            waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
+>>>>>>> Stashed changes
         }
     }
 
