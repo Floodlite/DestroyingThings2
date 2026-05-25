@@ -47,6 +47,11 @@ public class PlayerScoreHandler : MonoBehaviour
         overallPoints -= points;
     }
 
+    public void MultiplyPoints(float multiplier)
+    {
+        points *= multiplier;
+    }
+
     public void ResetPoints()
     {
         points = 0f;
