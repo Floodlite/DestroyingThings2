@@ -138,6 +138,10 @@ MonoBehaviour:
   health: 4
   enemyRoot: {fileID: 0}
   isDead: 0
+<<<<<<< Updated upstream
+=======
+  lastAttackedBy: {fileID: 0}
+>>>>>>> Stashed changes
 --- !u!114 &7656042768857254149
 MonoBehaviour:
   m_ObjectHideFlags: 0
