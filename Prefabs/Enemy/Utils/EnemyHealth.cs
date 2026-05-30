@@ -12,7 +12,6 @@ public class EnemyHealth : MonoBehaviour
     public bool IsDead => isDead;
     private SpawnWave waveSpawner;
     [SerializeField] private Player lastAttackedBy;
-
     private Reanimator reanimator;
     private readonly List<Behaviour> pausedBehaviours = new List<Behaviour>();
     private readonly List<NavMeshAgent> pausedAgents = new List<NavMeshAgent>();
@@ -168,19 +167,16 @@ public class EnemyHealth : MonoBehaviour
         MakeIntangible();
         StopEnemyBehaviours();
 
-<<<<<<< Updated upstream
-        waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
-
         //Award points to the player who dealt the last blow
         if(lastAttackedBy != null)
         {
             PlayerScoreHandler playerScoreScript = lastAttackedBy.gameObject.GetComponent<PlayerScoreHandler>();
             playerScoreScript.AddPoints(constructors.GetPoints() * playerScoreScript.GetKillMultiplier());
             playerScoreScript.AddToEnemiesKilled();
-=======
+        }
+
         if(waveSpawner != null) {
             waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
->>>>>>> Stashed changes
         }
     }
 

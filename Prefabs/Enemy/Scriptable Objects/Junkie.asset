@@ -17,12 +17,7 @@ MonoBehaviour:
   enemyDamage: 1
   enemySpeed: 10
   enemyHealth: 3
-<<<<<<< Updated upstream
   image: {fileID: 0}
-  dangerValue: 2
-  special: 1
-  points: 2
-=======
   dangerValue: 2
   pointsValue: 2.5
   special: 1
