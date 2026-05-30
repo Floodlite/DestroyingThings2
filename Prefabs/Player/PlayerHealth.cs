@@ -4,12 +4,17 @@ public class PlayerHealth : MonoBehaviour
 {
     [SerializeField] private int maxHealth = 8;
     [SerializeField] private int health = 8;
+    [SerializeField] private PlayerScoreHandler scoreHandler;
+
+    private void Awake()
+    {
+        scoreHandler = GetComponent<PlayerScoreHandler>();
+    }
 
     private void Start()
     {
         ResetHP();
     }
-
 
     private void ResetHP()
     {
@@ -42,6 +47,10 @@ public class PlayerHealth : MonoBehaviour
     private void Death()
     {
         Debug.Log("Failure failure failure");
+        if(scoreHandler != null)
+        {
+            scoreHandler.MultiplyPoints(0.8f);
+        }
         Destroy(gameObject);
     }
 }

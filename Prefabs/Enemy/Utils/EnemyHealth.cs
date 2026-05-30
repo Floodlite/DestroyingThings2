@@ -10,6 +10,11 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private Transform enemyRoot;
     [SerializeField] private bool isDead = false;
     public bool IsDead => isDead;
+<<<<<<< Updated upstream
+=======
+    private SpawnWave waveSpawner;
+    [SerializeField] private Player lastAttackedBy;
+>>>>>>> Stashed changes
 
     private Reanimator reanimator;
     private readonly List<Behaviour> pausedBehaviours = new List<Behaviour>();
@@ -74,6 +79,15 @@ public class EnemyHealth : MonoBehaviour
         }
 
         reanimator = GetComponentInParent<Reanimator>();
+<<<<<<< Updated upstream
+=======
+
+        SpawnWave[] waveSpawnerArray = FindObjectsByType<SpawnWave>(FindObjectsSortMode.InstanceID);
+        if(waveSpawnerArray != null)
+        {
+            waveSpawner = waveSpawnerArray[0];
+        }
+>>>>>>> Stashed changes
     }
 
     private void Start()
@@ -131,9 +145,32 @@ public class EnemyHealth : MonoBehaviour
             reanimator.SetDeathStatus(true);
         }
 
+        //Award points to the player who dealt the last blow
+        if(lastAttackedBy != null)
+        {
+            PlayerScoreHandler playerScoreScript = lastAttackedBy.gameObject.GetComponentInChildren<PlayerScoreHandler>();
+            if(playerScoreScript != null) {
+                float pointsScored = constructors.GetPoints() * playerScoreScript.GetKillMultiplier();
+                playerScoreScript.AddPoints(pointsScored);
+                playerScoreScript.AddToEnemiesKilled();
+                Debug.Log(lastAttackedBy + ": +" + pointsScored + " points scored");
+            }
+            else
+            {
+                Debug.Log(playerScoreScript + " not found");
+            }
+        }
+
         StopMovement();
         MakeIntangible();
         StopEnemyBehaviours();
+<<<<<<< Updated upstream
+=======
+
+        if(waveSpawner != null) {
+            waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
+        }
+>>>>>>> Stashed changes
     }
 
     private void StopMovement()
@@ -368,7 +405,7 @@ public class EnemyHealth : MonoBehaviour
     }
 
 
-    //makes this enemy lose health when getting punched
+    //Makes this enemy lose health when getting punched
     private void OnTriggerEnter(Collider other)
     {
         if (isDead)
@@ -386,6 +423,7 @@ public class EnemyHealth : MonoBehaviour
         if (player != null)
         {
             LoseHP(player.GetDamage());
+            lastAttackedBy = player;
         }
     }
 }

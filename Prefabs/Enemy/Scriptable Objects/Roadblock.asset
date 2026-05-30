@@ -12,8 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 319982c77056cc24bb95a3b785044505, type: 3}
   m_Name: Roadblock
   m_EditorClassIdentifier: 
+  image: {fileID: 21300000, guid: 90ded0611e490aa4ba6961afbfc2280d, type: 3}
   name: Roadblock
   enemyDamage: 2
   enemySpeed: 60
   enemyHealth: 4
+<<<<<<< Updated upstream
   image: {fileID: 21300000, guid: 90ded0611e490aa4ba6961afbfc2280d, type: 3}
+=======
+  dangerValue: 4.5
+  pointsValue: 4.5
+  special: 0
+>>>>>>> Stashed changes
