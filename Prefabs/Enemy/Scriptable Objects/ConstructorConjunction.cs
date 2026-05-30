@@ -54,6 +54,11 @@ public class ConstructorConjunction : MonoBehaviour
         return enemy.special;
     }
 
+    public float GetPoints()
+    {
+        return enemy.pointsValue;
+    }
+
     /// <summary>
     /// Minimum distance a player needs to be away from this enemy for it to attack
     /// <para>(Think of it like the enemy's "personal space")</para>
