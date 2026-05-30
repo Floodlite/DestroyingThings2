@@ -52,7 +52,9 @@ public class Player : MonoBehaviour
     private float holdTime;
     [SerializeField] private float throttle = 1;
 
-
+    [SerializeField] private bool turboMode = false;
+    [SerializeField] private int turboJumpCost = 4;
+    [SerializeField] private RestraintMeter restraintMeterScript;
 
 
     private void Awake()
@@ -62,6 +64,7 @@ public class Player : MonoBehaviour
         Collider collider = GetComponent<Collider>();
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
+        restraintMeterScript = this.GetComponent<RestraintMeter>();
     }
 
     void Start()
@@ -105,6 +108,8 @@ public class Player : MonoBehaviour
         destroyer.Player.Hoof_It.Enable();
         destroyer.Player.Hoof_It.AddCompositeBinding("OneModifier").With("Binding", "<Keyboard>/W").With("Binding", "<Keyboard>/A").With("Binding", "<Keyboard>/S").With("Binding", "<Keyboard>/D").With("Modifier", "<Keyboard>/H");
 
+        destroyer.Player.Turbo_Toggle.started += TurboToggle;
+        destroyer.Player.Turbo_Toggle.Enable();
 
         destroyer.Player.Escape.performed += GetOut;
         destroyer.Player.Escape.Enable();
@@ -127,6 +132,7 @@ public class Player : MonoBehaviour
         destroyer.Player.Accelerate.started -= Accelerator;
         destroyer.Player.Punch.started -= BeginPunch;
         destroyer.Player.Punch.canceled -= ReleasePunch;
+        destroyer.Player.Turbo_Toggle.started -= TurboToggle;
         destroyer.Player.Disable();
     }
 
@@ -245,16 +251,30 @@ public class Player : MonoBehaviour
 
     private void HowToJump(InputAction.CallbackContext obj)
     {
-        if (Grounded())
+        if(turboMode && restraintMeterScript.SpendRestraint(turboJumpCost))
         {
-            moveDirection += Vector3.up * jumpHeight;
-            StartCoroutine(GroundCheck());
+            HighJump();
         }
+<<<<<<< Updated upstream
         //It's time you learned how
         else
         {
             moveDirection += Vector3.up * jumpHeight * 0.055f;
             //Air "hover"
+=======
+        else {
+            if (Grounded())
+            {
+                moveDirection += Vector3.up * jumpHeight;
+                StartCoroutine(GroundCheck());
+            }
+            //It's time you learned how
+            else
+            {
+                moveDirection += Vector3.up * jumpHeight * 0.055f;
+                //Air "hover"
+            }
+>>>>>>> Stashed changes
         }
     }
 
@@ -262,8 +282,44 @@ public class Player : MonoBehaviour
     {
         if (Grounded() && !breakdanceMode)
         {
+<<<<<<< Updated upstream
             moveDirection += Vector3.up * jumpHeight * 1.75f;
             moveDirection += transform.forward * jumpHeight * 2.5f;
+=======
+            Vector3 upwardImpulse = Vector3.up * jumpHeight * 3.85f;
+            
+            moveDirection += upwardImpulse;
+
+            /*
+            Vector3 forwardImpulse = transform.forward * jumpHeight * 2.5f;
+            if (!IsPathBlocked(transform.forward, forwardImpulse.magnitude))
+            {
+                moveDirection += forwardImpulse;
+            }
+            */
+            
+            StartCoroutine(GroundCheck());
+            Debug.Log("Go long");
+        }
+    }
+
+    private void HighJump()
+    {
+        if (Grounded() && !breakdanceMode)
+        {
+            Vector3 upwardImpulse = Vector3.up * jumpHeight * 3.85f;
+            
+            moveDirection += upwardImpulse;
+
+            /*
+            Vector3 forwardImpulse = transform.forward * jumpHeight * 2.5f;
+            if (!IsPathBlocked(transform.forward, forwardImpulse.magnitude))
+            {
+                moveDirection += forwardImpulse;
+            }
+            */
+            
+>>>>>>> Stashed changes
             StartCoroutine(GroundCheck());
             Debug.Log("Go long");
         }
@@ -410,6 +466,11 @@ public class Player : MonoBehaviour
         {
             StartCoroutine(PowerToGround());
         }
+    }
+
+    private void TurboToggle(InputAction.CallbackContext obj)
+    {
+        turboMode = !turboMode;
     }
 
 

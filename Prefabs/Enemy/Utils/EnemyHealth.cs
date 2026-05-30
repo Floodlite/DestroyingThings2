@@ -11,6 +11,10 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private bool isDead = false;
     public bool IsDead => isDead;
     private SpawnWave waveSpawner;
+<<<<<<< Updated upstream
+=======
+    [SerializeField] private Player lastAttackedBy;
+>>>>>>> Stashed changes
 
     private Reanimator reanimator;
     private readonly List<Behaviour> pausedBehaviours = new List<Behaviour>();
@@ -142,11 +146,42 @@ public class EnemyHealth : MonoBehaviour
             reanimator.SetDeathStatus(true);
         }
 
+<<<<<<< Updated upstream
+=======
+        //Award points to the player who dealt the last blow
+        if(lastAttackedBy != null)
+        {
+            PlayerScoreHandler playerScoreScript = lastAttackedBy.gameObject.GetComponentInChildren<PlayerScoreHandler>();
+            if(playerScoreScript != null) {
+                float pointsScored = constructors.GetPoints() * playerScoreScript.GetKillMultiplier();
+                playerScoreScript.AddPoints(pointsScored);
+                playerScoreScript.AddToEnemiesKilled();
+                Debug.Log(lastAttackedBy + ": +" + pointsScored + " points scored");
+
+                RestraintMeter restraintMeterScript = lastAttackedBy.gameObject.GetComponentInChildren<RestraintMeter>();
+                if(restraintMeterScript != null)
+                {
+                    restraintMeterScript.AddRestraint(1); 
+                }
+            }
+            else
+            {
+                Debug.Log(playerScoreScript + " not found");
+            }
+        }
+
+>>>>>>> Stashed changes
         StopMovement();
         MakeIntangible();
         StopEnemyBehaviours();
 
+<<<<<<< Updated upstream
         waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
+=======
+        if(waveSpawner != null) {
+            waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
+        }
+>>>>>>> Stashed changes
     }
 
     private void StopMovement()
