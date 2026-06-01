@@ -3,19 +3,21 @@ using System.Collections;
 
 public class PlayerAttack : MonoBehaviour
 {
-    [SerializeField] private GameObject player;
+    [SerializeField] private Player player;
     [SerializeField] private GameObject hurtBox;
     [SerializeField] private MeshRenderer mr;
     [SerializeField] private BoxCollider bc;
     [SerializeField] private bool punchInProgress = false;
     private float boxSize = 0.2f;
 
-
+    [SerializeField] private RestraintMeter restraintMeterScript;
 
     public void BringTheHurt()
     {
         punchInProgress = !punchInProgress;
         hurtBox.gameObject.SetActive(punchInProgress);
+        restraintMeterScript = GetComponent<RestraintMeter>();
+        player = GetComponent<Player>();
     }
 
     public void BringTheHurtII(float punchUptime, float punchDimensions, bool longPunch)
@@ -29,8 +31,19 @@ public class PlayerAttack : MonoBehaviour
         //wait 1 second,
         //shrink box back down and disable the enabled components
 
-        if (!punchInProgress) {
-            StartCoroutine(PunchCycle(punchUptime, punchDimensions, longPunch));
+        if(restraintMeterScript.GetTurboStatus())
+        {
+            while(restraintMeterScript.SpendRestraint(restraintMeterScript.GetTurboPunchCost())) {
+                if (!punchInProgress) {
+                    StartCoroutine(PunchCycle(punchUptime*0.4f, punchDimensions*1.1f, longPunch));
+                }
+            }
+        }
+
+        else {
+            if (!punchInProgress) {
+                StartCoroutine(PunchCycle(punchUptime, punchDimensions, longPunch));
+            }
         }
     }
     

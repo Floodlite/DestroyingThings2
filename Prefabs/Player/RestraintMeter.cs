@@ -6,6 +6,11 @@ public class RestraintMeter : MonoBehaviour
    [SerializeField] private int current = 0;
    [SerializeField] private int timesActivated = 0;
 
+   [SerializeField] private bool turboMode = false;
+   [SerializeField] private int turboJumpCost = 4;
+   [SerializeField] private int turboPunchCost = 3; //Each individual punch (9)
+   [SerializeField] private int turboHoofCost = 5;
+
    private void Start()
     {
         if(max < 2)
@@ -83,5 +88,30 @@ public class RestraintMeter : MonoBehaviour
 
             //TODO: Stat boosts
         }
+    }
+
+    public bool GetTurboStatus()
+    {
+        return turboMode;
+    }
+
+    public void ToggleTurbo()
+    {
+        turboMode = !turboMode;
+    }
+
+    public int GetTurboJumpCost()
+    {
+        return turboJumpCost;
+    }
+
+    public int GetTurboHoofCost()
+    {
+        return turboHoofCost;
+    }
+
+    public int GetTurboPunchCost()
+    {
+        return turboPunchCost;
     }
 }

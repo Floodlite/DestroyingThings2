@@ -10,7 +10,7 @@ public class Player : MonoBehaviour
     public Rigidbody rb;
 
     [SerializeField] private float moveSpeed = 3f;
-    [SerializeField] private float jumpHeight = 30f;
+    [SerializeField] private float jumpHeight = 18f;
     [SerializeField] private float maxSpeed = 20f;
     [SerializeField] private float fallForce = 8f;
     [SerializeField] private float storedSpeed = 1f;
@@ -36,7 +36,7 @@ public class Player : MonoBehaviour
 
     [SerializeField] private Vector3 gizmoCubeVector = new Vector3(0f, 1.5f, 0f);
 
-    [SerializeField] private bool targetGet = false;
+    //[SerializeField] private bool targetGet = false;
     [SerializeField] private GameObject targetAura;
     [SerializeField] private GameObject chargeAura;
 
@@ -52,9 +52,8 @@ public class Player : MonoBehaviour
     private float holdTime;
     [SerializeField] private float throttle = 1;
 
-    [SerializeField] private bool turboMode = false;
-    [SerializeField] private int turboJumpCost = 4;
     [SerializeField] private RestraintMeter restraintMeterScript;
+    
 
 
     private void Awake()
@@ -62,7 +61,7 @@ public class Player : MonoBehaviour
         rb = this.GetComponent<Rigidbody>();
         destroyer = new Destroyer();
         Collider collider = GetComponent<Collider>();
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         restraintMeterScript = this.GetComponent<RestraintMeter>();
     }
@@ -100,8 +99,8 @@ public class Player : MonoBehaviour
         destroyer.Player.Punch.Enable();
         destroyer.Player.Punch.canceled += ReleasePunch;
 
-        destroyer.Player.High_Jump.started += HighJump;
-        destroyer.Player.High_Jump.Enable();
+        //destroyer.Player.High_Jump.started += HighJump;
+        //destroyer.Player.High_Jump.Enable();
         //destroyer.Player.High_Jump.AddCompositeBinding("OneModifier").With("Binding", "<Keyboard>/Space").With("Modifier", "<Keyboard>/Shift");
 
         destroyer.Player.Hoof_It.started += HoofIt;
@@ -124,7 +123,7 @@ public class Player : MonoBehaviour
     {
         destroyer.Player.Jump.started -= HowToJump;
         destroyer.Player.Breakdance.started -= BreakOut;
-        destroyer.Player.High_Jump.started -= HighJump;
+        //destroyer.Player.High_Jump.started -= HighJump;
         destroyer.Player.Hoof_It.started -= HoofIt;
         destroyer.Player.Charge.started -= ChargeCommand;
         destroyer.Player.Sneak.started -= Sneak;
@@ -158,25 +157,59 @@ public class Player : MonoBehaviour
             transform.rotation *= Quaternion.AngleAxis(15, Vector3.up);
         }
 
-        rb.AddForce(moveDirection, ForceMode.Impulse);
-        rb.AddForce(moveDirection, ForceMode.Acceleration);
+
+        rb.AddForce(moveDirection, ForceMode.Impulse); //IMPORTANT
+        
+        
+        //rb.AddForce(moveDirection, ForceMode.Acceleration);
         moveDirection = Vector3.zero; 
+
+        ClampVelocities();
 
         if (rb.linearVelocity.y < 0f)
         {
-            rb.linearVelocity += Vector3.up * Physics.gravity.y * fallForce * Time.fixedDeltaTime;
+            float maxDownwardSpeed = maxSpeed * 0.5f;
+            float extraGravity = Physics.gravity.y * fallForce * Time.fixedDeltaTime;
+            //Only add if speed is not capped
+            if (rb.linearVelocity.y > -maxDownwardSpeed)
+            {
+                rb.linearVelocity += Vector3.up * extraGravity;
+            }
         }
 
-        Vector3 horizontalVelocity = rb.linearVelocity;
-        horizontalVelocity.y = 0;
-        if (horizontalVelocity.sqrMagnitude > maxSpeed * maxSpeed)
+        if (!breakdanceMode) { LookDirection(); }
+    }
+
+    private void ClampVelocities()
+    {
+        Vector3 velocity = rb.linearVelocity;
+
+        if (!Grounded())
         {
-            rb.linearVelocity = horizontalVelocity.normalized * maxSpeed + Vector3.up * rb.linearVelocity.y;
+            Vector3 sidewaysVelocityAir = new Vector3(velocity.x, 0f, velocity.z); //Airborne clamp
+            float airborneMaxSpeed = maxSpeed * 0.7f;
+            if (sidewaysVelocityAir.sqrMagnitude > airborneMaxSpeed * airborneMaxSpeed)
+            {
+                Vector3 targetHorizontal = sidewaysVelocityAir.normalized * airborneMaxSpeed;
+                Vector3 correction = (targetHorizontal - sidewaysVelocityAir) / Time.fixedDeltaTime;
+                rb.AddForce(new Vector3(correction.x, 0f, correction.z), ForceMode.Acceleration);
+            }
+
+            float maxDownwardSpeed = maxSpeed * 0.5f; //Downwards clamp
+            if (velocity.y < -maxDownwardSpeed)
+            {
+                float correction = (-maxDownwardSpeed - sidewaysVelocityAir.y) / Time.fixedDeltaTime;
+                rb.AddForce(Vector3.up * correction, ForceMode.Acceleration);
+            }
         }
 
-        if (!breakdanceMode)
+        // Overall horizontal speed clamp
+        Vector3 sidewaysVelocity = new Vector3(velocity.x, 0f, velocity.z);
+        if (sidewaysVelocity.sqrMagnitude > maxSpeed * maxSpeed)
         {
-            LookDirection();
+            Vector3 targetHorizontalVelocity = sidewaysVelocity.normalized * maxSpeed;
+            Vector3 correction = (targetHorizontalVelocity - sidewaysVelocity) / Time.fixedDeltaTime;
+            rb.AddForce(new Vector3(correction.x, 0f, correction.z), ForceMode.Acceleration);
         }
     }
 
@@ -222,6 +255,8 @@ public class Player : MonoBehaviour
 
     private void BreakOut(InputAction.CallbackContext obj)
     {
+        return;
+        /*
         breakdanceMode = !breakdanceMode;
         rb.automaticCenterOfMass = !rb.automaticCenterOfMass;
         if (breakdanceMode)
@@ -247,21 +282,15 @@ public class Player : MonoBehaviour
             rb.linearDamping = 3.5f;
             jumpHeight *= 4f;
         }
+        */
     }
 
     private void HowToJump(InputAction.CallbackContext obj)
     {
-        if(turboMode && restraintMeterScript.SpendRestraint(turboJumpCost))
+        if(restraintMeterScript.GetTurboStatus() && restraintMeterScript.SpendRestraint(restraintMeterScript.GetTurboJumpCost()))
         {
             HighJump();
         }
-<<<<<<< Updated upstream
-        //It's time you learned how
-        else
-        {
-            moveDirection += Vector3.up * jumpHeight * 0.055f;
-            //Air "hover"
-=======
         else {
             if (Grounded())
             {
@@ -274,34 +303,31 @@ public class Player : MonoBehaviour
                 moveDirection += Vector3.up * jumpHeight * 0.055f;
                 //Air "hover"
             }
->>>>>>> Stashed changes
         }
     }
 
+    /*
     private void HighJump(InputAction.CallbackContext obj)
     {
         if (Grounded() && !breakdanceMode)
         {
-<<<<<<< Updated upstream
-            moveDirection += Vector3.up * jumpHeight * 1.75f;
-            moveDirection += transform.forward * jumpHeight * 2.5f;
-=======
             Vector3 upwardImpulse = Vector3.up * jumpHeight * 3.85f;
             
             moveDirection += upwardImpulse;
 
-            /*
+    
             Vector3 forwardImpulse = transform.forward * jumpHeight * 2.5f;
             if (!IsPathBlocked(transform.forward, forwardImpulse.magnitude))
             {
                 moveDirection += forwardImpulse;
             }
-            */
+            
             
             StartCoroutine(GroundCheck());
             Debug.Log("Go long");
         }
     }
+    */
 
     private void HighJump()
     {
@@ -319,7 +345,6 @@ public class Player : MonoBehaviour
             }
             */
             
->>>>>>> Stashed changes
             StartCoroutine(GroundCheck());
             Debug.Log("Go long");
         }
@@ -327,19 +352,43 @@ public class Player : MonoBehaviour
 
     private void HoofIt(InputAction.CallbackContext obj)
     {
+        bool turboHoof = false;
+        if(restraintMeterScript.GetTurboStatus() && restraintMeterScript.SpendRestraint(restraintMeterScript.GetTurboHoofCost()))
+        {
+            turboHoof = true;
+            hoofRecharged = true;
+        }
+
         //if (!Grounded() && !hoofCooldown)
         if(!Grounded() && hoofRecharged)
         {
+            float hoofMultiplier = 1f;
+            if(turboHoof) { fallForce /= 8f; airborneMovement *= 4f; }
             hoofRecharged = false;
             
-            moveDirection += move.ReadValue<Vector2>().x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed;
-            moveDirection += move.ReadValue<Vector2>().y * GetCameraF(playerCamera) * moveSpeed * hoofSpeed;
+            Vector2 moveInput = move.ReadValue<Vector2>();
+            Vector3 hoofDirection = moveInput.x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed
+                                 + moveInput.y * GetCameraF(playerCamera) * moveSpeed * hoofSpeed;
+            
+            moveDirection += hoofDirection;
             moveDirection += Vector3.down;
-            rb.AddForce(moveDirection, ForceMode.Impulse);
+            
+            //Check if hoof direction is blocked
+            if (IsPathBlocked(hoofDirection.normalized, hoofDirection.magnitude))
+            {
+                hoofMultiplier *= 0.25f;
+            }
+            if(Grounded())
+            {
+                hoofMultiplier *= 0.3f;
+            }
+            
+            rb.AddForce(moveDirection * hoofMultiplier, ForceMode.Impulse);
             Debug.Log("Hoofing it: Strong");
+
+            if(turboHoof) { fallForce *= 8f; airborneMovement /= 4f; }
+            moveDirection = Vector3.zero;
             StartCoroutine(RechargeHoof());
-            //hoofCooldown = true;
-            //StartCoroutine(HoofWait(1.5f));
         }
         /*else if (Grounded() && !hoofCooldown)
         {
@@ -470,9 +519,8 @@ public class Player : MonoBehaviour
 
     private void TurboToggle(InputAction.CallbackContext obj)
     {
-        turboMode = !turboMode;
+        restraintMeterScript.ToggleTurbo();
     }
-
 
     public bool Grounded()
     {
@@ -580,6 +628,23 @@ public class Player : MonoBehaviour
         hoofRecharged = true;
     }
 
+    private bool IsPathBlocked(Vector3 direction, float checkDistance)
+    {
+        if (direction.sqrMagnitude < 0.001f || checkDistance <= 0) {
+            return false;
+        }
+        
+        direction = direction.normalized;
+        
+        //SphereCast to check if path is blocked
+        if (Physics.SphereCast(transform.position, 0.4f, direction, out RaycastHit hit, checkDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            //Only block if collision is far enough ahead (not micro-collisions)
+            return (hit.distance > 0.1f);
+        }
+        
+        return false;
+    }
 
     private void LookDirection()
     {
@@ -610,6 +675,40 @@ public class Player : MonoBehaviour
         return right.normalized;
     }
 
+    //Deal with walls
+    private void OnCollisionEnter(Collision collision)
+    {
+        HandleWallCollision(collision);
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        HandleWallCollision(collision);
+    }
+
+    private void HandleWallCollision(Collision collision)
+    {
+        if (Grounded()) { return; } //Only cares about airborne wall contacts
+
+        foreach (ContactPoint contact in collision.contacts)
+        {
+            // A "wall" contact has a mostly horizontal normal
+            if (Mathf.Abs(contact.normal.y) < 0.4f)
+            {
+                //Cancel velocity going INTO wall surface
+                float penetratingSpeed = Vector3.Dot(rb.linearVelocity, -contact.normal);
+                if (penetratingSpeed > 0f)
+                {
+                    rb.linearVelocity += contact.normal * penetratingSpeed;
+                }
+                break;
+            }
+        }
+    }
+
+
+    //Moved to ScoreHandler.cs
+    /*
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Target"))
@@ -631,6 +730,7 @@ public class Player : MonoBehaviour
             }
         }
     }
+    */
 
     
 

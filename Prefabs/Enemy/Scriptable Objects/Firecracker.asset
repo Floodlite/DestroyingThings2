@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 319982c77056cc24bb95a3b785044505, type: 3}
   m_Name: Firecracker
   m_EditorClassIdentifier: 
+  image: {fileID: 0}
   name: Firecracker
   enemyDamage: 1
   enemySpeed: 10
   enemyHealth: 2
-  image: {fileID: 0}
   dangerValue: 3
+  pointsValue: 2.5
   special: 0

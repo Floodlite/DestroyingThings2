@@ -4,8 +4,6 @@ public class PlayerHealth : MonoBehaviour
 {
     [SerializeField] private int maxHealth = 8;
     [SerializeField] private int health = 8;
-<<<<<<< Updated upstream
-=======
     [SerializeField] private PlayerScoreHandler scoreHandler;
     [SerializeField] private RestraintMeter restraintMeterScript;
 
@@ -14,13 +12,11 @@ public class PlayerHealth : MonoBehaviour
         scoreHandler = GetComponent<PlayerScoreHandler>();
         restraintMeterScript = GetComponent<RestraintMeter>();
     }
->>>>>>> Stashed changes
 
     private void Start()
     {
         ResetHP();
     }
-
 
     private void ResetHP()
     {
@@ -55,6 +51,10 @@ public class PlayerHealth : MonoBehaviour
     private void Death()
     {
         Debug.Log("Failure failure failure");
+        if(scoreHandler != null)
+        {
+            scoreHandler.MultiplyPoints(0.8f);
+        }
         Destroy(gameObject);
     }
 }

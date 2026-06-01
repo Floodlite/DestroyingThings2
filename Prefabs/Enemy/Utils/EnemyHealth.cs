@@ -11,10 +11,7 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private bool isDead = false;
     public bool IsDead => isDead;
     private SpawnWave waveSpawner;
-<<<<<<< Updated upstream
-=======
     [SerializeField] private Player lastAttackedBy;
->>>>>>> Stashed changes
 
     private Reanimator reanimator;
     private readonly List<Behaviour> pausedBehaviours = new List<Behaviour>();
@@ -79,7 +76,12 @@ public class EnemyHealth : MonoBehaviour
         }
         constructors = GetComponentInParent<ConstructorConjunction>();
         reanimator = GetComponentInParent<Reanimator>();
-        waveSpawner = FindObjectsByType<SpawnWave>(FindObjectsSortMode.None)[0];
+
+        SpawnWave[] waveSpawnerArray = FindObjectsByType<SpawnWave>(FindObjectsSortMode.InstanceID);
+        if(waveSpawnerArray != null)
+        {
+            waveSpawner = waveSpawnerArray[0];
+        }
     }
 
     private void Start()
@@ -146,8 +148,6 @@ public class EnemyHealth : MonoBehaviour
             reanimator.SetDeathStatus(true);
         }
 
-<<<<<<< Updated upstream
-=======
         //Award points to the player who dealt the last blow
         if(lastAttackedBy != null)
         {
@@ -170,18 +170,13 @@ public class EnemyHealth : MonoBehaviour
             }
         }
 
->>>>>>> Stashed changes
         StopMovement();
         MakeIntangible();
         StopEnemyBehaviours();
 
-<<<<<<< Updated upstream
-        waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
-=======
         if(waveSpawner != null) {
             waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
         }
->>>>>>> Stashed changes
     }
 
     private void StopMovement()
@@ -419,7 +414,7 @@ public class EnemyHealth : MonoBehaviour
     }
 
 
-    //makes this enemy lose health when getting punched
+    //Makes this enemy lose health when getting punched
     private void OnTriggerEnter(Collider other)
     {
         if (isDead)
@@ -437,6 +432,7 @@ public class EnemyHealth : MonoBehaviour
         if (player != null)
         {
             LoseHP(player.GetDamage());
+            lastAttackedBy = player;
         }
     }
 }

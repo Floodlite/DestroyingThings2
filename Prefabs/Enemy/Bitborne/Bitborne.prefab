@@ -865,6 +865,7 @@ MonoBehaviour:
   health: 8
   enemyRoot: {fileID: 0}
   isDead: 0
+  lastAttackedBy: {fileID: 0}
 --- !u!114 &2013426282588788144
 MonoBehaviour:
   m_ObjectHideFlags: 0
