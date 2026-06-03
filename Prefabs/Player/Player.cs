@@ -294,10 +294,15 @@ public class Player : MonoBehaviour
         else {
             if (Grounded())
             {
+                //It's time you learned how
                 moveDirection += Vector3.up * jumpHeight;
                 StartCoroutine(GroundCheck());
             }
-            //It's time you learned how
+            else if(!Grounded() && restraintMeterScript.GetTurboStatus() && restraintMeterScript.SpendRestraint(restraintMeterScript.GetBonusJumpCost()))
+            {
+                moveDirection += Vector3.up * jumpHeight * 0.75f;
+                StartCoroutine(GroundCheck());
+            }
             else
             {
                 moveDirection += Vector3.up * jumpHeight * 0.055f;
@@ -356,14 +361,12 @@ public class Player : MonoBehaviour
         if(restraintMeterScript.GetTurboStatus() && restraintMeterScript.SpendRestraint(restraintMeterScript.GetTurboHoofCost()))
         {
             turboHoof = true;
-            hoofRecharged = true;
+            airborneMovement *= 4f;
         }
 
-        //if (!Grounded() && !hoofCooldown)
         if(!Grounded() && hoofRecharged)
         {
             float hoofMultiplier = 1f;
-            if(turboHoof) { fallForce /= 8f; airborneMovement *= 4f; }
             hoofRecharged = false;
             
             Vector2 moveInput = move.ReadValue<Vector2>();
@@ -378,18 +381,19 @@ public class Player : MonoBehaviour
             {
                 hoofMultiplier *= 0.25f;
             }
-            if(Grounded())
-            {
-                hoofMultiplier *= 0.3f;
-            }
-            
+
             rb.AddForce(moveDirection * hoofMultiplier, ForceMode.Impulse);
             Debug.Log("Hoofing it: Strong");
 
-            if(turboHoof) { fallForce *= 8f; airborneMovement /= 4f; }
             moveDirection = Vector3.zero;
             StartCoroutine(RechargeHoof());
         }
+        
+        if(turboHoof)
+        {
+            airborneMovement /= 4f;
+        }
+
         /*else if (Grounded() && !hoofCooldown)
         {
             moveDirection += move.ReadValue<Vector2>().x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed * 0.25f;
@@ -486,7 +490,7 @@ public class Player : MonoBehaviour
             {
                 playerAttack.BringTheHurtII(punchDuration, punchSize, false);
             }*/
-            playerAttack.BringTheHurtII(punchDuration, punchSize, false);
+            playerAttack.BringTheHurtII(punchDuration, punchSize);
             
             /*
             ChangeThrottle(200*(2+holdTime));

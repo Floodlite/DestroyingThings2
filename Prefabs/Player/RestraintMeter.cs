@@ -4,12 +4,16 @@ public class RestraintMeter : MonoBehaviour
 {
    [SerializeField] private int max = 16;
    [SerializeField] private int current = 0;
-   [SerializeField] private int timesActivated = 0;
+   private int timesActivated = 0;
+   private int startingRestraint = 4;
 
    [SerializeField] private bool turboMode = false;
    [SerializeField] private int turboJumpCost = 4;
-   [SerializeField] private int turboPunchCost = 3; //Each individual punch (9)
-   [SerializeField] private int turboHoofCost = 5;
+   [SerializeField] private int bonusJumpCost = 3;
+   [SerializeField] private int turboPunchCost = 4; //Adds extra punches
+   [SerializeField] private int turboHoofCost = 3;
+
+   private bool debugMode = false;
 
    private void Start()
     {
@@ -17,7 +21,9 @@ public class RestraintMeter : MonoBehaviour
         {
             max = 16;
         }
-        current = 0;
+        current = startingRestraint;
+
+        if(debugMode) { current = 48; }
     }
 
     public bool SpendRestraint(int cost)
@@ -36,7 +42,7 @@ public class RestraintMeter : MonoBehaviour
         FullMeterTrigger();
     }
 
-    //Does not let the amount added fill the meter
+    //Does not let the amount added fill the meter to its max
     public void AddRestraintClamped(int amount)
     {
         current += amount;
@@ -95,6 +101,16 @@ public class RestraintMeter : MonoBehaviour
         return turboMode;
     }
 
+    public int GetMaxRestraint()
+    {
+        return max;
+    }
+
+    public int GetCurrentRestraint()
+    {
+        return current;
+    }
+
     public void ToggleTurbo()
     {
         turboMode = !turboMode;
@@ -103,6 +119,11 @@ public class RestraintMeter : MonoBehaviour
     public int GetTurboJumpCost()
     {
         return turboJumpCost;
+    }
+
+    public int GetBonusJumpCost()
+    {
+        return bonusJumpCost;
     }
 
     public int GetTurboHoofCost()
