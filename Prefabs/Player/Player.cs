@@ -366,6 +366,11 @@ public class Player : MonoBehaviour
 
     private void HoofIt(InputAction.CallbackContext obj)
     {
+        if(restraintMeterScript.GetTurboStatus() && restraintMeterScript.SpendRestraint(restraintMeterScript.GetTurboHoofCost()))
+        {
+            StartCoroutine(IgnoreGravity(2f));
+        }
+
         if (!Grounded() && hoofRecharged)
         {
             hoofRecharged = false;
@@ -413,6 +418,19 @@ public class Player : MonoBehaviour
         isDashing = false;
         dashSpeedCap = 0f;
         dashWindowCoroutine = null;
+    }
+
+    IEnumerator IgnoreGravity(float duration)
+    {
+        airborneMovement *= 8f;
+        rb.useGravity = false;
+        yield return new WaitForSeconds(duration);
+        rb.useGravity = true;
+        airborneMovement /= 8f;
+        
+        fallForce *= 8f;
+        yield return new WaitForSeconds(2f);
+        fallForce /= 8f;
     }
 
     private void Sneak(InputAction.CallbackContext obj)

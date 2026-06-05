@@ -2,16 +2,16 @@ using UnityEngine;
 
 public class RestraintMeter : MonoBehaviour
 {
-   [SerializeField] private int max = 16;
+   [SerializeField] private int max = 28;
    [SerializeField] private int current = 0;
    private int timesActivated = 0;
    private int startingRestraint = 4;
 
    [SerializeField] private bool turboMode = false;
-   [SerializeField] private int turboJumpCost = 4;
+   [SerializeField] private int turboJumpCost = 2;
    [SerializeField] private int bonusJumpCost = 3;
    [SerializeField] private int turboPunchCost = 4; //Adds extra punches
-   [SerializeField] private int turboHoofCost = 3;
+   [SerializeField] private int turboHoofCost = 2;
 
    private bool debugMode = false;
 
@@ -19,7 +19,7 @@ public class RestraintMeter : MonoBehaviour
     {
         if(max < 2)
         {
-            max = 16;
+            max = 28;
         }
         current = startingRestraint;
 
