@@ -17,7 +17,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float accelSpeed = 1f;
     [SerializeField] private float airborneMovement = 1f;
     [SerializeField] private float yourSpeed = 1f;
-    private float hoofSpeed = 24f;
+    [SerializeField] private float hoofSpeed = 1f;
     //private bool hoofCooldown = false;
     [SerializeField] private bool sneaking = false;
     [SerializeField] private bool drifting = false;
@@ -29,6 +29,9 @@ public class Player : MonoBehaviour
     [SerializeField] private Camera playerCamera;
     [SerializeField] private bool breakdanceMode = false;
     [SerializeField] private bool hoofRecharged = true;
+    private bool isDashing = false;
+    private float dashSpeedCap = 0f;
+    private Coroutine dashWindowCoroutine;
 
     [SerializeField] private bool boxHit = false;
     [SerializeField] private float boxDistance = 3f;
@@ -168,7 +171,7 @@ public class Player : MonoBehaviour
 
         if (rb.linearVelocity.y < 0f)
         {
-            float maxDownwardSpeed = maxSpeed * 0.5f;
+            float maxDownwardSpeed = maxSpeed * 1.05f;
             float extraGravity = Physics.gravity.y * fallForce * Time.fixedDeltaTime;
             //Only add if speed is not capped
             if (rb.linearVelocity.y > -maxDownwardSpeed)
@@ -186,30 +189,36 @@ public class Player : MonoBehaviour
 
         if (!Grounded())
         {
-            Vector3 sidewaysVelocityAir = new Vector3(velocity.x, 0f, velocity.z); //Airborne clamp
-            float airborneMaxSpeed = maxSpeed * 0.7f;
-            if (sidewaysVelocityAir.sqrMagnitude > airborneMaxSpeed * airborneMaxSpeed)
+            Vector3 horizontalVel = new Vector3(velocity.x, 0f, velocity.z);
+            //Use decaying dashSpeedCap during dash, normal limit otherwise
+            float effectiveMax = isDashing ? dashSpeedCap : maxSpeed * 0.7f;
+
+            if (horizontalVel.sqrMagnitude > effectiveMax * effectiveMax)
             {
-                Vector3 targetHorizontal = sidewaysVelocityAir.normalized * airborneMaxSpeed;
-                Vector3 correction = (targetHorizontal - sidewaysVelocityAir) / Time.fixedDeltaTime;
+                Vector3 targetH = horizontalVel.normalized * effectiveMax;
+                Vector3 correction = (targetH - horizontalVel) / Time.fixedDeltaTime;
                 rb.AddForce(new Vector3(correction.x, 0f, correction.z), ForceMode.Acceleration);
             }
 
-            float maxDownwardSpeed = maxSpeed * 0.5f; //Downwards clamp
+            //Downward cap: always active
+            float maxDownwardSpeed = maxSpeed * 0.5f;
             if (velocity.y < -maxDownwardSpeed)
             {
-                float correction = (-maxDownwardSpeed - sidewaysVelocityAir.y) / Time.fixedDeltaTime;
+                float correction = (-maxDownwardSpeed - velocity.y) / Time.fixedDeltaTime;
                 rb.AddForce(Vector3.up * correction, ForceMode.Acceleration);
             }
         }
 
-        // Overall horizontal speed clamp
-        Vector3 sidewaysVelocity = new Vector3(velocity.x, 0f, velocity.z);
-        if (sidewaysVelocity.sqrMagnitude > maxSpeed * maxSpeed)
+        //Global cap: now unified ()no separate isDashing branch needed here)
+        if (!isDashing)
         {
-            Vector3 targetHorizontalVelocity = sidewaysVelocity.normalized * maxSpeed;
-            Vector3 correction = (targetHorizontalVelocity - sidewaysVelocity) / Time.fixedDeltaTime;
-            rb.AddForce(new Vector3(correction.x, 0f, correction.z), ForceMode.Acceleration);
+            Vector3 hVel = new Vector3(velocity.x, 0f, velocity.z);
+            if (hVel.sqrMagnitude > maxSpeed * maxSpeed)
+            {
+                Vector3 targetH = hVel.normalized * maxSpeed;
+                Vector3 correction = (targetH - hVel) / Time.fixedDeltaTime;
+                rb.AddForce(new Vector3(correction.x, 0f, correction.z), ForceMode.Acceleration);
+            }
         }
     }
 
@@ -357,52 +366,53 @@ public class Player : MonoBehaviour
 
     private void HoofIt(InputAction.CallbackContext obj)
     {
-        bool turboHoof = false;
-        if(restraintMeterScript.GetTurboStatus() && restraintMeterScript.SpendRestraint(restraintMeterScript.GetTurboHoofCost()))
+        if (!Grounded() && hoofRecharged)
         {
-            turboHoof = true;
-            airborneMovement *= 4f;
-        }
-
-        if(!Grounded() && hoofRecharged)
-        {
-            float hoofMultiplier = 1f;
             hoofRecharged = false;
-            
+
             Vector2 moveInput = move.ReadValue<Vector2>();
-            Vector3 hoofDirection = moveInput.x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed
-                                 + moveInput.y * GetCameraF(playerCamera) * moveSpeed * hoofSpeed;
-            
-            moveDirection += hoofDirection;
-            moveDirection += Vector3.down;
-            
-            //Check if hoof direction is blocked
-            if (IsPathBlocked(hoofDirection.normalized, hoofDirection.magnitude))
-            {
-                hoofMultiplier *= 0.25f;
-            }
+            Vector3 dashDirection = (moveInput.x * GetCameraR(playerCamera)
+                                + moveInput.y * GetCameraF(playerCamera)).normalized;
 
-            rb.AddForce(moveDirection * hoofMultiplier, ForceMode.Impulse);
-            Debug.Log("Hoofing it: Strong");
+            if (dashDirection.sqrMagnitude < 0.001f)
+                dashDirection = transform.forward; //Fallback if no input
 
-            moveDirection = Vector3.zero;
+            float dashSpeed = moveSpeed * hoofSpeed;
+            if (IsPathBlocked(dashDirection, dashSpeed * 0.3f))
+                dashSpeed *= 0.25f;
+
+            //Set velocity directly so it's fully isolated from moveDirection accumulation
+            rb.linearVelocity = new Vector3(
+                dashDirection.x * dashSpeed,
+                rb.linearVelocity.y - 2f,   //Small downward nudge, same intent as Vector3.down
+                dashDirection.z * dashSpeed
+            );
+
+            if (dashWindowCoroutine != null)
+                StopCoroutine(dashWindowCoroutine);
+            dashWindowCoroutine = StartCoroutine(DashWindow(dashSpeed));
+
             StartCoroutine(RechargeHoof());
         }
-        
-        if(turboHoof)
+    }
+
+    IEnumerator DashWindow(float startSpeed)
+    {
+        isDashing = true;
+        dashSpeedCap = startSpeed;
+        float airborneMax = maxSpeed * 0.7f;
+        //Decay the cap from dashSpeed to normal airborne speed over 0.25s
+        float decayRate = (startSpeed - airborneMax) / 0.25f;
+
+        while (dashSpeedCap > airborneMax)
         {
-            airborneMovement /= 4f;
+            dashSpeedCap = Mathf.MoveTowards(dashSpeedCap, airborneMax, decayRate * Time.fixedDeltaTime);
+            yield return new WaitForFixedUpdate();
         }
 
-        /*else if (Grounded() && !hoofCooldown)
-        {
-            moveDirection += move.ReadValue<Vector2>().x * GetCameraR(playerCamera) * moveSpeed * hoofSpeed * 0.25f;
-            moveDirection += move.ReadValue<Vector2>().y * GetCameraF(playerCamera) * moveSpeed * hoofSpeed * 0.25f;
-            rb.AddForce(moveDirection, ForceMode.Impulse);
-            Debug.Log("Hoofing it: Weak");
-            hoofCooldown = true;
-            StartCoroutine(HoofWait(1f));
-        } */
+        isDashing = false;
+        dashSpeedCap = 0f;
+        dashWindowCoroutine = null;
     }
 
     private void Sneak(InputAction.CallbackContext obj)
@@ -565,7 +575,7 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         if (!Grounded() && !sneaking)
         {
-            airborneMovement *= 0.2f;
+            airborneMovement *= 0.4f;
             yield return null;
         }
         else if (!Grounded() && sneaking)
@@ -692,14 +702,11 @@ public class Player : MonoBehaviour
 
     private void HandleWallCollision(Collision collision)
     {
-        if (Grounded()) { return; } //Only cares about airborne wall contacts
-
+        //Distinguishes walls from floors
         foreach (ContactPoint contact in collision.contacts)
         {
-            // A "wall" contact has a mostly horizontal normal
             if (Mathf.Abs(contact.normal.y) < 0.4f)
             {
-                //Cancel velocity going INTO wall surface
                 float penetratingSpeed = Vector3.Dot(rb.linearVelocity, -contact.normal);
                 if (penetratingSpeed > 0f)
                 {
