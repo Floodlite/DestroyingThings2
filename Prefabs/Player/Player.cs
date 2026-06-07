@@ -543,6 +543,12 @@ public class Player : MonoBehaviour
 
     private void ChargeCommand(InputAction.CallbackContext obj)
     {
+        if(restraintMeterScript.GetTurboStatus() && restraintMeterScript.SpendRestraint(restraintMeterScript.GetTurboChargeCost()))
+        {
+            rb.AddExplosionForce(10f, new Vector3(transform.position.x, transform.position.y-0.1f, transform.position.z), 5f, 3f, ForceMode.Force);
+            //Add damaging box for this
+        }
+
         if (!Grounded())
         {
             StartCoroutine(PowerToGround());
