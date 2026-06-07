@@ -231,6 +231,15 @@ public class Player : MonoBehaviour
     {
         return movingDirection;
     }
+
+    public void AddForceFunction(float xChange, float yChange, float zChange, ForceMode forceMode)
+    {
+        Vector3 moveVector = new Vector3(moveDirection.x + xChange, moveDirection.y + yChange, moveDirection.z + zChange);
+        if (!IsPathBlocked(transform.forward, moveVector.magnitude))
+        {
+            rb.AddForce(moveVector, forceMode);
+        }
+    }
     
     private void AccelerationII()
     {
@@ -383,8 +392,9 @@ public class Player : MonoBehaviour
                 dashDirection = transform.forward; //Fallback if no input
 
             float dashSpeed = moveSpeed * hoofSpeed;
-            if (IsPathBlocked(dashDirection, dashSpeed * 0.3f))
+            if (IsPathBlocked(dashDirection, dashSpeed * 0.3f)) {
                 dashSpeed *= 0.25f;
+            }
 
             //Set velocity directly so it's fully isolated from moveDirection accumulation
             rb.linearVelocity = new Vector3(
@@ -510,14 +520,11 @@ public class Player : MonoBehaviour
             //Debug.Log("Punch held: " + holdTime);
             //Long press: Long punch
             //Short press: Short punch
-            /*
+            
             if(holdTime >= 0.4f) {    
-                playerAttack.BringTheHurtII(punchDuration*1.25f, punchSize, true);
+                //Who knows what it can do?!
+                //playerAttack.Grab();
             }
-            else
-            {
-                playerAttack.BringTheHurtII(punchDuration, punchSize, false);
-            }*/
             playerAttack.BringTheHurtII(punchDuration, punchSize);
             
             /*
