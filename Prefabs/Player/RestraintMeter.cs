@@ -12,6 +12,7 @@ public class RestraintMeter : MonoBehaviour
    [SerializeField] private int bonusJumpCost = 3;
    [SerializeField] private int turboPunchCost = 4; //Adds extra punches
    [SerializeField] private int turboHoofCost = 2;
+   [SerializeField] private int turboChargeCost = 3;
 
    private bool debugMode = false;
 
@@ -134,5 +135,10 @@ public class RestraintMeter : MonoBehaviour
     public int GetTurboPunchCost()
     {
         return turboPunchCost;
+    }
+
+    public int GetTurboChargeCost()
+    {
+        return turboChargeCost;
     }
 }
