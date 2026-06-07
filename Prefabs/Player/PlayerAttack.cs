@@ -3,11 +3,11 @@ using System.Collections;
 
 public class PlayerAttack : MonoBehaviour
 {
-    [SerializeField] private Player player;
     [SerializeField] private GameObject hurtBox;
     [SerializeField] private MeshRenderer mr;
     [SerializeField] private BoxCollider bc;
     [SerializeField] private bool punchInProgress = false;
+    private Player player;
     private float boxSize = 0.2f;
     private float minBoxSize = 0.2f;
     private int punchCount = 1;
