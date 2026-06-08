@@ -54,6 +54,7 @@ public class Player : MonoBehaviour
     private bool punchInProgress;
     private float holdTime;
     [SerializeField] private float throttle = 1;
+    private float hoverForce = 0.055f;
 
     [SerializeField] private RestraintMeter restraintMeterScript;
     
@@ -323,10 +324,15 @@ public class Player : MonoBehaviour
             }
             else
             {
-                moveDirection += Vector3.up * jumpHeight * 0.055f;
+                AirHover(1f);
                 //Air "hover"
             }
         }
+    }
+
+    private void AirHover(float hoverMultiplier)
+    {
+        moveDirection += Vector3.up * jumpHeight * hoverForce * hoverMultiplier;
     }
 
     /*
@@ -495,6 +501,11 @@ public class Player : MonoBehaviour
     private void ReleasePunch(InputAction.CallbackContext obj)
     {
         if(punchInProgress) {
+            if(!Grounded())
+            {
+                AirHover(1.05f);
+            }
+            
             //playerAttack.BringTheHurt();
             punchDuration = basePunchDuration;
             punchSize = basePunchSize;
