@@ -47,7 +47,8 @@ public class Pooler : MonoBehaviour
         waveEnemies = new GameObject("Wave Enemies");
         waveEnemies.transform.SetParent(emptyPool.transform);
         spawnedEnemies = new GameObject("Spawned Enemies");
-        spawnedEnemies.transform.SetParent(emptyPool.transform);    
+        spawnedEnemies.transform.SetParent(emptyPool.transform);
+        
         if(doNotDestroyOnLoad) { DontDestroyOnLoad(emptyPool.transform.root); }
     }
 

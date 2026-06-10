@@ -181,6 +181,7 @@ public class SpawnWave : MonoBehaviour
         }
         else {
             currentWave++;
+            currentDanger = 0f;
             maxDanger += dangerIncrease;
             ChooseEnemies();
         }

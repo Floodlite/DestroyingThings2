@@ -9,15 +9,15 @@ public class Player : MonoBehaviour
 
     public Rigidbody rb;
 
-    [SerializeField] private float moveSpeed = 3f;
-    [SerializeField] private float jumpHeight = 18f;
+    [SerializeField] private float moveSpeed = 18f;
+    [SerializeField] private float jumpHeight = 35f;
     [SerializeField] private float maxSpeed = 20f;
-    [SerializeField] private float fallForce = 8f;
+    [SerializeField] private float fallForce = 70f;
     [SerializeField] private float storedSpeed = 1f;
     [SerializeField] private float accelSpeed = 1f;
     [SerializeField] private float airborneMovement = 1f;
     [SerializeField] private float yourSpeed = 1f;
-    [SerializeField] private float hoofSpeed = 1f;
+    [SerializeField] private float hoofSpeed = 7f;
     //private bool hoofCooldown = false;
     [SerializeField] private bool sneaking = false;
     [SerializeField] private bool drifting = false;
@@ -55,6 +55,7 @@ public class Player : MonoBehaviour
     private float holdTime;
     [SerializeField] private float throttle = 1;
     private float hoverForce = 0.055f;
+    private bool freeJump = true;
 
     [SerializeField] private RestraintMeter restraintMeterScript;
     
@@ -210,7 +211,7 @@ public class Player : MonoBehaviour
             }
         }
 
-        //Global cap: now unified (no separate isDashing branch needed here)
+        //Global cap: now unified ()no separate isDashing branch needed here)
         if (!isDashing)
         {
             Vector3 hVel = new Vector3(velocity.x, 0f, velocity.z);
@@ -322,8 +323,13 @@ public class Player : MonoBehaviour
                 moveDirection += Vector3.up * jumpHeight * 0.75f;
                 StartCoroutine(GroundCheck());
             }
-            else
+            else if(!Grounded() && freeJump)
             {
+                freeJump = false;
+                moveDirection += Vector3.up * jumpHeight * 1.5f;
+                StartCoroutine(GroundCheck());
+            }
+            else {
                 AirHover(1f);
                 //Air "hover"
             }
@@ -617,12 +623,12 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         if (!Grounded() && !sneaking)
         {
-            airborneMovement *= 0.4f;
+            airborneMovement *= 0.7f;
             yield return null;
         }
         else if (!Grounded() && sneaking)
         {
-            airborneMovement *= 0.8f;
+            airborneMovement *= 0.9f;
             yield return null;
         }
 
@@ -631,6 +637,11 @@ public class Player : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
         }
         airborneMovement = 1f;
+
+        if(!freeJump)
+        {
+            freeJump = true;
+        }
     }
 
     IEnumerator PowerToGround()
