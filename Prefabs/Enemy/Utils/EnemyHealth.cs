@@ -12,6 +12,7 @@ public class EnemyHealth : MonoBehaviour
     public bool IsDead => isDead;
     private SpawnWave waveSpawner;
     [SerializeField] private Player lastAttackedBy;
+
     private Reanimator reanimator;
     private readonly List<Behaviour> pausedBehaviours = new List<Behaviour>();
     private readonly List<NavMeshAgent> pausedAgents = new List<NavMeshAgent>();
@@ -156,6 +157,12 @@ public class EnemyHealth : MonoBehaviour
                 playerScoreScript.AddPoints(pointsScored);
                 playerScoreScript.AddToEnemiesKilled();
                 Debug.Log(lastAttackedBy + ": +" + pointsScored + " points scored");
+
+                RestraintMeter restraintMeterScript = lastAttackedBy.gameObject.GetComponentInChildren<RestraintMeter>();
+                if(restraintMeterScript != null)
+                {
+                    restraintMeterScript.AddRestraint(1); 
+                }
             }
             else
             {

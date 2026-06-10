@@ -18,7 +18,7 @@ public class PlayerScoreHandler : MonoBehaviour
 
     //Points awarded for doing certain things
     private float deliveryPoints = 10f;
-    private float collectPoints = 1f;
+    private float collectPoints = 2f;
     //Tied to the specific type of enemy killed (intensive property)
     //[SerializeField] private float enemyKillPoints = 0f; 
 
@@ -26,10 +26,12 @@ public class PlayerScoreHandler : MonoBehaviour
     private float collectMultiplier = 1f;
     private float enemyKillMultiplier = 1f;
 
+    [SerializeField] RestraintMeter restraintMeterScript;
 
 
     public void Awake()
     {
+        restraintMeterScript = GetComponent<RestraintMeter>();
         targetGet = false;
         ResetPoints();
         ResetCounters();
@@ -39,6 +41,7 @@ public class PlayerScoreHandler : MonoBehaviour
     {
         points += pointsToAdd;
         overallPoints += pointsToAdd;
+        restraintMeterScript.AddRestraint((int)(pointsToAdd/2));
     }
 
     public void LosePoints(float pointsToLose)

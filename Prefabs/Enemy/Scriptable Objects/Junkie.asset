@@ -17,7 +17,6 @@ MonoBehaviour:
   enemyDamage: 1
   enemySpeed: 10
   enemyHealth: 3
-  image: {fileID: 0}
   dangerValue: 2
   pointsValue: 2.5
   special: 1

@@ -5,10 +5,12 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private int maxHealth = 8;
     [SerializeField] private int health = 8;
     [SerializeField] private PlayerScoreHandler scoreHandler;
+    [SerializeField] private RestraintMeter restraintMeterScript;
 
     private void Awake()
     {
         scoreHandler = GetComponent<PlayerScoreHandler>();
+        restraintMeterScript = GetComponent<RestraintMeter>();
     }
 
     private void Start()
@@ -28,7 +30,9 @@ public class PlayerHealth : MonoBehaviour
         if (health <= 0)
         {
             Death();
+            return;
         }
+        if(restraintMeterScript != null) { restraintMeterScript.AddRestraintClamped(healthLoss/2); }
     }
 
     public void GainHP(int healthGain)
