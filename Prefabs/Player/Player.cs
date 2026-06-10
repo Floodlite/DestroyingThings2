@@ -54,6 +54,7 @@ public class Player : MonoBehaviour
     private bool punchInProgress;
     private float holdTime;
     [SerializeField] private float throttle = 1;
+    private float hoverForce = 0.055f;
 
     [SerializeField] private RestraintMeter restraintMeterScript;
     
@@ -209,7 +210,7 @@ public class Player : MonoBehaviour
             }
         }
 
-        //Global cap: now unified ()no separate isDashing branch needed here)
+        //Global cap: now unified (no separate isDashing branch needed here)
         if (!isDashing)
         {
             Vector3 hVel = new Vector3(velocity.x, 0f, velocity.z);
@@ -323,10 +324,15 @@ public class Player : MonoBehaviour
             }
             else
             {
-                moveDirection += Vector3.up * jumpHeight * 0.055f;
+                AirHover(1f);
                 //Air "hover"
             }
         }
+    }
+
+    private void AirHover(float hoverMultiplier)
+    {
+        moveDirection += Vector3.up * jumpHeight * hoverForce * hoverMultiplier;
     }
 
     /*
@@ -495,6 +501,11 @@ public class Player : MonoBehaviour
     private void ReleasePunch(InputAction.CallbackContext obj)
     {
         if(punchInProgress) {
+            if(!Grounded())
+            {
+                AirHover(1.05f);
+            }
+            
             //playerAttack.BringTheHurt();
             punchDuration = basePunchDuration;
             punchSize = basePunchSize;
@@ -550,6 +561,12 @@ public class Player : MonoBehaviour
 
     private void ChargeCommand(InputAction.CallbackContext obj)
     {
+        if(restraintMeterScript.GetTurboStatus() && restraintMeterScript.SpendRestraint(restraintMeterScript.GetTurboChargeCost()))
+        {
+            rb.AddExplosionForce(10f, new Vector3(transform.position.x, transform.position.y-0.1f, transform.position.z), 5f, 3f, ForceMode.Force);
+            //Add damaging box for this
+        }
+
         if (!Grounded())
         {
             StartCoroutine(PowerToGround());
