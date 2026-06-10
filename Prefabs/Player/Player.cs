@@ -210,7 +210,7 @@ public class Player : MonoBehaviour
             }
         }
 
-        //Global cap: now unified ()no separate isDashing branch needed here)
+        //Global cap: now unified (no separate isDashing branch needed here)
         if (!isDashing)
         {
             Vector3 hVel = new Vector3(velocity.x, 0f, velocity.z);

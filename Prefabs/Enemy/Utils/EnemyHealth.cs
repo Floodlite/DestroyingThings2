@@ -174,6 +174,14 @@ public class EnemyHealth : MonoBehaviour
         MakeIntangible();
         StopEnemyBehaviours();
 
+        //Award points to the player who dealt the last blow
+        if(lastAttackedBy != null)
+        {
+            PlayerScoreHandler playerScoreScript = lastAttackedBy.gameObject.GetComponent<PlayerScoreHandler>();
+            playerScoreScript.AddPoints(constructors.GetPoints() * playerScoreScript.GetKillMultiplier());
+            playerScoreScript.AddToEnemiesKilled();
+        }
+
         if(waveSpawner != null) {
             waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
         }
