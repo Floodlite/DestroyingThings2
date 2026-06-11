@@ -65,8 +65,7 @@ public class Player : MonoBehaviour
     {
         rb = this.GetComponent<Rigidbody>();
         destroyer = new Destroyer();
-        Collider collider = GetComponent<Collider>();
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic; //Formerly ContinuousSpeculative
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         restraintMeterScript = this.GetComponent<RestraintMeter>();
     }
@@ -755,18 +754,24 @@ public class Player : MonoBehaviour
 
     private void HandleWallCollision(Collision collision)
     {
-        //Distinguishes walls from floors
+        const float hardWallThreshold = 0.7f;  //Below this: full correction, unchanged
+        const float floorThreshold = 0.85f; //Above this: treated as floor, no correction (consider nudging towards 0.9))
+        //0.7–0.85 band is the new steep-slope zone where correction scales down
+
         foreach (ContactPoint contact in collision.contacts)
         {
-            if (Mathf.Abs(contact.normal.y) < 0.4f)
-            {
-                float penetratingSpeed = Vector3.Dot(rb.linearVelocity, -contact.normal);
-                if (penetratingSpeed > 0f)
-                {
-                    rb.linearVelocity += contact.normal * penetratingSpeed;
-                }
-                break;
-            }
+            float absNormalY = Mathf.Abs(contact.normal.y);
+            if (absNormalY >= floorThreshold) { continue; }
+
+            float penetratingSpeed = Vector3.Dot(rb.linearVelocity, -contact.normal);
+            if (penetratingSpeed <= 0f) { continue; }
+
+            //Full correction for walls, linearly reduced for steep slopes
+            float scale = absNormalY < hardWallThreshold
+                ? 1f
+                : 1f - (absNormalY - hardWallThreshold) / (floorThreshold - hardWallThreshold);
+
+            rb.linearVelocity += contact.normal * (penetratingSpeed * scale);
         }
     }
 
