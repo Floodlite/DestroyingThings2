@@ -23,6 +23,7 @@ public class PlayerAttack : MonoBehaviour
     private void Start()
     {
         punchCount = 1;
+        cooldownInProgress = false;
     }
 
     public void BringTheHurt()
@@ -109,5 +110,81 @@ public class PlayerAttack : MonoBehaviour
             bc.enabled = false;
         }
         punchInProgress = false;
+    }
+
+
+
+    [SerializeField] private bool cooldownInProgress = false;
+    [SerializeField] private GameObject slingBall;
+    [SerializeField] private GameObject rocket;
+    [SerializeField] private GameObject wall;
+    [SerializeField] private GameObject bomb;
+    [SerializeField] private GameObject superBall;
+    [SerializeField] private GameObject paintBall;
+
+    public void DoomSword()
+    {
+        Debug.Log("Schwing!");
+        return;
+    }
+
+    public void DoomSling()
+    {
+        PlayerShoot(slingBall, 2.5f, 2f, 0.15f);
+    }
+
+    public void DoomRocket()
+    {
+        PlayerShoot(rocket, 1.5f, 5f, 3f);
+    }
+
+    public void DoomTrowel()
+    {
+        PlayerShoot(wall, 0.1f, 5f, 2f);
+    }
+
+    public void DoomBomb()
+    {
+        PlayerShoot(bomb, 0.1f, 6f, 2f);
+    }
+
+    public void DoomBall()
+    {
+        PlayerShoot(superBall, 2f, 2f, 1f);
+    }
+
+    public void DoomPaint()
+    {
+        PlayerShoot(paintBall, 2.25f, 1.5f, 0.75f);
+    }
+    
+    public void PlayerShoot(GameObject projectile, float projectileSpeed, float projectileLifespan, float cooldownTime)
+    {
+        if(projectile == null)
+        {
+            return;
+        }
+
+        if(!cooldownInProgress) {
+            StartCoroutine(StartCooldown(cooldownTime));
+            cooldownInProgress = true;
+            GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 0.5f, 2.5f), transform.rotation, Pooler.PoolType.bullets);
+            Rigidbody ballRb = ball.GetComponent<Rigidbody>();
+            if(ballRb != null) { ballRb.linearVelocity = player.GetPlayerMoveDirection() * projectileSpeed; }
+            StartCoroutine(SelfDestruct(ball, projectileLifespan));
+        }
+    }
+
+    private IEnumerator SelfDestruct(GameObject obj, float projectileLifespan)
+    {
+        yield return new WaitForSeconds(projectileLifespan);
+        Pooler.ReleaseObjectToPool(obj, Pooler.PoolType.bullets);
+    }
+
+    private IEnumerator StartCooldown(float cooldownTime)
+    {
+        cooldownInProgress = true;
+        yield return new WaitForSeconds(cooldownTime);
+        cooldownInProgress = false;
     }
 }
