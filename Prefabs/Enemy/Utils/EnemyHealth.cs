@@ -432,15 +432,23 @@ public class EnemyHealth : MonoBehaviour
 
         Player player = other.GetComponentInParent<Player>();
 
-        if (!other.CompareTag("Punch"))
+        if (!other.CompareTag("Punch") && !other.CompareTag("Ranged"))
         {
             return;
         }
 
         if (player != null)
         {
-            LoseHP(player.GetDamage());
+            if (other.CompareTag("Punch"))  {
+                LoseHP(player.GetDamage());
+            }
             lastAttackedBy = player;
+        }
+
+        //You will only get credit for earning points if you punch them at least once
+        if(other.CompareTag("Ranged"))
+        {
+            LoseHP(1);
         }
     }
 }
