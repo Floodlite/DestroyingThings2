@@ -10,36 +10,18 @@ public class SpawnWave : MonoBehaviour
     [SerializeField] private List<GameObject> enemiesOfWave = new List<GameObject>();
     [SerializeField] private List<GameObject> enemiesAlive = new List<GameObject>();
     [SerializeField] private bool everyoneDead = false;
-    [SerializeField] private bool doneChoosing = false;
 
     [SerializeField] private float maxDanger = 8f;
     [SerializeField] private float currentDanger = 0f;
 
-    [SerializeField] private int currentWave = 1;
-
-    [SerializeField] private int maxWave = 8;
-
     private void Awake()
     {
         spawnPoints = SetSpawns(this.transform, "Spawn");
-        if(maxDanger == 0f) { maxDanger = 8f; }
-        currentWave = 1;
-        doneChoosing = false;
     }
 
     private void Start()
     {
-        ChooseEnemies();
-    }
-
-    private void LateUpdate()
-    {
-        everyoneDead = AllEnemiesDead();
-        if(everyoneDead && doneChoosing)
-        {
-            NextWave(2f);
-            doneChoosing = false;
-        }
+        if(maxDanger <= 0f) { maxDanger = 8f; }
     }
 
     private Dictionary<GameObject, bool> SetSpawns(Transform parent, string tag)
@@ -70,10 +52,8 @@ public class SpawnWave : MonoBehaviour
             GameObject chosenObject = enemyPool[chosenIndex];
             ConstructorConjunction constructors = chosenObject.GetComponentInChildren<ConstructorConjunction>();
             if(constructors == null) { Debug.LogWarning("Constructor Conjunction not found on " + chosenObject);  continue; }
-            //EnemyConstructor enemy = constructors.GetEnemy();
-            //if(enemy == null) { Debug.LogWarning("Constructors not found on " + chosenObject);  continue; }
+            
             float enemyDangerValue = constructors.GetDangerValue();
-
             if(currentDanger + enemyDangerValue > maxDanger) { 
                 continue; 
             }
@@ -95,7 +75,6 @@ public class SpawnWave : MonoBehaviour
                 break;
             }
         }
-        doneChoosing = true;
         return;
     }
 
@@ -120,32 +99,10 @@ public class SpawnWave : MonoBehaviour
         }
     }
 
-    /*
-    private bool AllEnemiesDead()
+    public void RaiseMaxDanger(int toAdd)
     {
-        //Switch to FindObjectsSortMode.None if performance issues arise
-        enemiesAlive = FindObjectsByType<Reanimator>(FindObjectsSortMode.InstanceID);
-        foreach(Reanimator script in enemiesAlive)
-        {
-            if(!script.IsDead()) {
-                return false;
-            }
-            //TODO: Remove enemies from their pool and change the length of the array accordingly
-        }
-        return true;
-    }
-    */
-
-    private bool AllEnemiesDead()
-    {
-        if(enemiesAlive.Count < 1)
-        {   
-            Debug.Log("Everyone is dead");
-            return true;
-        }
-        else {
-            return false;
-        }
+        maxDanger += toAdd;
+        if(maxDanger < 1) { maxDanger = 8; }
     }
 
     public void AddToEnemiesAlive(GameObject enemyToAdd)
@@ -158,6 +115,11 @@ public class SpawnWave : MonoBehaviour
         enemiesAlive.Remove(enemyToRemove);
     }
 
+    public int GetNumberOfEnemiesAlive()
+    {
+        return enemiesAlive.Count;
+    }
+
     private void ClearWaveEnemies()
     {
         foreach(GameObject enemy in enemiesOfWave) {
@@ -165,7 +127,7 @@ public class SpawnWave : MonoBehaviour
         }
     }
 
-    private void NextWave(float dangerIncrease=2f)
+    public void NextWave()
     {
         ClearWaveEnemies();
 
@@ -175,6 +137,7 @@ public class SpawnWave : MonoBehaviour
             spawnPoints[key] = false;
         }
         
+<<<<<<< Updated upstream
         if(currentWave + 1 > maxWave)
         {
             Debug.Log("All waves cleared!");
@@ -184,5 +147,9 @@ public class SpawnWave : MonoBehaviour
             maxDanger += dangerIncrease;
             ChooseEnemies();
         }
+=======
+        currentDanger = 0f;
+        ChooseEnemies();
+>>>>>>> Stashed changes
     }
 }
