@@ -6,7 +6,7 @@ public class PlayerScoreHandler : MonoBehaviour
     [SerializeField] private GameObject targetAura;
 
     [SerializeField] private float points = 0f;
-    [SerializeField] private float overallPoints = 0;
+    [SerializeField] private float overallPoints = 0f;
 
     [SerializeField] private int orbsCollected = 0;
     [SerializeField] private int deliveriesMade = 0;
@@ -29,10 +29,14 @@ public class PlayerScoreHandler : MonoBehaviour
     [SerializeField] RestraintMeter restraintMeterScript;
 
 
-    public void Awake()
+    private void Awake()
     {
         restraintMeterScript = GetComponent<RestraintMeter>();
         targetGet = false;
+    }
+
+    private void Start()
+    {
         ResetPoints();
         ResetCounters();
     }
@@ -99,6 +103,14 @@ public class PlayerScoreHandler : MonoBehaviour
             orbsCollectedOverall++;
             Destroy(other.gameObject);
             AddPoints(collectPoints * collectMultiplier);
+        }
+
+        if (other.CompareTag("Big Collect"))
+        {
+            orbsCollected++;
+            orbsCollectedOverall++;
+            Destroy(other.gameObject);
+            AddPoints(4f * collectPoints * collectMultiplier);
         }
 
         //Deliveries

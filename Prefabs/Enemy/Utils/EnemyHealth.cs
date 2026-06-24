@@ -174,14 +174,6 @@ public class EnemyHealth : MonoBehaviour
         MakeIntangible();
         StopEnemyBehaviours();
 
-        //Award points to the player who dealt the last blow
-        if(lastAttackedBy != null)
-        {
-            PlayerScoreHandler playerScoreScript = lastAttackedBy.gameObject.GetComponent<PlayerScoreHandler>();
-            playerScoreScript.AddPoints(constructors.GetPoints() * playerScoreScript.GetKillMultiplier());
-            playerScoreScript.AddToEnemiesKilled();
-        }
-
         if(waveSpawner != null) {
             waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
         }
@@ -432,15 +424,23 @@ public class EnemyHealth : MonoBehaviour
 
         Player player = other.GetComponentInParent<Player>();
 
-        if (!other.CompareTag("Punch"))
+        if (!other.CompareTag("Punch") && !other.CompareTag("Ranged"))
         {
             return;
         }
 
         if (player != null)
         {
-            LoseHP(player.GetDamage());
+            if (other.CompareTag("Punch"))  {
+                LoseHP(player.GetDamage());
+            }
             lastAttackedBy = player;
+        }
+
+        //You will only get credit for earning points if you punch them at least once
+        if(other.CompareTag("Ranged"))
+        {
+            LoseHP(1);
         }
     }
 }

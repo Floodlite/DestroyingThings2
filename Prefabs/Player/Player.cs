@@ -9,15 +9,15 @@ public class Player : MonoBehaviour
 
     public Rigidbody rb;
 
-    [SerializeField] private float moveSpeed = 3f;
-    [SerializeField] private float jumpHeight = 18f;
+    [SerializeField] private float moveSpeed = 18f;
+    [SerializeField] private float jumpHeight = 35f;
     [SerializeField] private float maxSpeed = 20f;
-    [SerializeField] private float fallForce = 8f;
+    [SerializeField] private float fallForce = 70f;
     [SerializeField] private float storedSpeed = 1f;
     [SerializeField] private float accelSpeed = 1f;
     [SerializeField] private float airborneMovement = 1f;
     [SerializeField] private float yourSpeed = 1f;
-    [SerializeField] private float hoofSpeed = 1f;
+    [SerializeField] private float hoofSpeed = 7f;
     //private bool hoofCooldown = false;
     [SerializeField] private bool sneaking = false;
     [SerializeField] private bool drifting = false;
@@ -44,7 +44,7 @@ public class Player : MonoBehaviour
     [SerializeField] private GameObject chargeAura;
 
     [SerializeField] private PlayerAttack playerAttack;
-    [SerializeField] public int attackDamage = 1;
+    [SerializeField] public int attackDamage = 2;
     private float basePunchDuration = 0.05f;
     private float basePunchSize = 3f;
     private float punchDuration;
@@ -55,6 +55,7 @@ public class Player : MonoBehaviour
     private float holdTime;
     [SerializeField] private float throttle = 1;
     private float hoverForce = 0.055f;
+    private bool freeJump = true;
 
     [SerializeField] private RestraintMeter restraintMeterScript;
     
@@ -64,8 +65,7 @@ public class Player : MonoBehaviour
     {
         rb = this.GetComponent<Rigidbody>();
         destroyer = new Destroyer();
-        Collider collider = GetComponent<Collider>();
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic; //Formerly ContinuousSpeculative
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         restraintMeterScript = this.GetComponent<RestraintMeter>();
     }
@@ -114,6 +114,11 @@ public class Player : MonoBehaviour
         destroyer.Player.Turbo_Toggle.started += TurboToggle;
         destroyer.Player.Turbo_Toggle.Enable();
 
+        destroyer.Player.Ranged_Punch.started += DoomAttacks;
+        destroyer.Player.Ranged_Punch.Enable();
+        destroyer.Player.Ranged_Toggle_Placeholder.started += DoomTogglePlaceholder;
+        destroyer.Player.Ranged_Toggle_Placeholder.Enable();
+
         destroyer.Player.Escape.performed += GetOut;
         destroyer.Player.Escape.Enable();
 
@@ -136,6 +141,8 @@ public class Player : MonoBehaviour
         destroyer.Player.Punch.started -= BeginPunch;
         destroyer.Player.Punch.canceled -= ReleasePunch;
         destroyer.Player.Turbo_Toggle.started -= TurboToggle;
+        destroyer.Player.Ranged_Punch.started -= DoomAttacks;
+        destroyer.Player.Ranged_Toggle_Placeholder.started -= DoomTogglePlaceholder;
         destroyer.Player.Disable();
     }
 
@@ -210,7 +217,7 @@ public class Player : MonoBehaviour
             }
         }
 
-        //Global cap: now unified (no separate isDashing branch needed here)
+        //Global cap: now unified ()no separate isDashing branch needed here)
         if (!isDashing)
         {
             Vector3 hVel = new Vector3(velocity.x, 0f, velocity.z);
@@ -322,8 +329,13 @@ public class Player : MonoBehaviour
                 moveDirection += Vector3.up * jumpHeight * 0.75f;
                 StartCoroutine(GroundCheck());
             }
-            else
+            else if(!Grounded() && freeJump)
             {
+                freeJump = false;
+                moveDirection += Vector3.up * jumpHeight * 1.5f;
+                StartCoroutine(GroundCheck());
+            }
+            else {
                 AirHover(1f);
                 //Air "hover"
             }
@@ -578,6 +590,43 @@ public class Player : MonoBehaviour
         restraintMeterScript.ToggleTurbo();
     }
 
+
+    //placeholder
+    [SerializeField] private int attackIndex = 1;
+    private void DoomTogglePlaceholder(InputAction.CallbackContext obj)
+    {
+        attackIndex++;
+        if(attackIndex > 6) { attackIndex = 1; }
+    }
+    
+    private void DoomAttacks(InputAction.CallbackContext obj)
+    {
+        switch(attackIndex)
+        {
+            case 1:
+                playerAttack.DoomSling();
+                break;
+            case 2:
+                playerAttack.DoomRocket();
+                break;
+            case 3:
+                playerAttack.DoomTrowel();
+                break;
+            case 4:
+                playerAttack.DoomBomb();
+                break;
+            case 5:
+                playerAttack.DoomBall();
+                break;
+            case 6:
+                playerAttack.DoomPaint();
+                break;
+            default:
+                playerAttack.DoomSword();
+                break;
+        }
+    }
+
     public bool Grounded()
     {
         bool boxHit = Physics.BoxCast(GetComponent<Collider>().bounds.center, transform.localScale * 0.75f, Vector3.down, out objectHit, transform.rotation, boxDistance);
@@ -617,12 +666,12 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         if (!Grounded() && !sneaking)
         {
-            airborneMovement *= 0.4f;
+            airborneMovement *= 0.7f;
             yield return null;
         }
         else if (!Grounded() && sneaking)
         {
-            airborneMovement *= 0.8f;
+            airborneMovement *= 0.9f;
             yield return null;
         }
 
@@ -631,6 +680,11 @@ public class Player : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
         }
         airborneMovement = 1f;
+
+        if(!freeJump)
+        {
+            freeJump = true;
+        }
     }
 
     IEnumerator PowerToGround()
@@ -744,18 +798,24 @@ public class Player : MonoBehaviour
 
     private void HandleWallCollision(Collision collision)
     {
-        //Distinguishes walls from floors
+        const float hardWallThreshold = 0.7f;  //Below this: full correction, unchanged
+        const float floorThreshold = 0.85f; //Above this: treated as floor, no correction (consider nudging towards 0.9))
+        //0.7–0.85 band is the new steep-slope zone where correction scales down
+
         foreach (ContactPoint contact in collision.contacts)
         {
-            if (Mathf.Abs(contact.normal.y) < 0.4f)
-            {
-                float penetratingSpeed = Vector3.Dot(rb.linearVelocity, -contact.normal);
-                if (penetratingSpeed > 0f)
-                {
-                    rb.linearVelocity += contact.normal * penetratingSpeed;
-                }
-                break;
-            }
+            float absNormalY = Mathf.Abs(contact.normal.y);
+            if (absNormalY >= floorThreshold) { continue; }
+
+            float penetratingSpeed = Vector3.Dot(rb.linearVelocity, -contact.normal);
+            if (penetratingSpeed <= 0f) { continue; }
+
+            //Full correction for walls, linearly reduced for steep slopes
+            float scale = absNormalY < hardWallThreshold
+                ? 1f
+                : 1f - (absNormalY - hardWallThreshold) / (floorThreshold - hardWallThreshold);
+
+            rb.linearVelocity += contact.normal * (penetratingSpeed * scale);
         }
     }
 

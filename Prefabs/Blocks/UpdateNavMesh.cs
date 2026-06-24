@@ -4,15 +4,19 @@ using Unity.AI.Navigation;
 public class UpdateNavMesh : MonoBehaviour {
 
     public NavMeshSurface surface;
-
-    private void Awake()
-    {
-        RebuildNavMesh();
-    }
+    public bool on = true;
 
     private void Start()
     {
-        RebuildNavMesh();
+        if(on) { 
+            RebuildNavMesh(); 
+            Debug.Log("Rebuild NavMesh is ON");
+        }
+        else
+        {
+            Debug.Log("Rebuild NavMesh is OFF");
+        }
+
     }
 
     public void RebuildNavMesh()
