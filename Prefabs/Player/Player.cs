@@ -44,7 +44,7 @@ public class Player : MonoBehaviour
     [SerializeField] private GameObject chargeAura;
 
     [SerializeField] private PlayerAttack playerAttack;
-    [SerializeField] public int attackDamage = 1;
+    [SerializeField] public int attackDamage = 2;
     private float basePunchDuration = 0.05f;
     private float basePunchSize = 3f;
     private float punchDuration;
@@ -114,6 +114,11 @@ public class Player : MonoBehaviour
         destroyer.Player.Turbo_Toggle.started += TurboToggle;
         destroyer.Player.Turbo_Toggle.Enable();
 
+        destroyer.Player.Ranged_Punch.started += DoomAttacks;
+        destroyer.Player.Ranged_Punch.Enable();
+        destroyer.Player.Ranged_Toggle_Placeholder.started += DoomTogglePlaceholder;
+        destroyer.Player.Ranged_Toggle_Placeholder.Enable();
+
         destroyer.Player.Escape.performed += GetOut;
         destroyer.Player.Escape.Enable();
 
@@ -136,6 +141,8 @@ public class Player : MonoBehaviour
         destroyer.Player.Punch.started -= BeginPunch;
         destroyer.Player.Punch.canceled -= ReleasePunch;
         destroyer.Player.Turbo_Toggle.started -= TurboToggle;
+        destroyer.Player.Ranged_Punch.started -= DoomAttacks;
+        destroyer.Player.Ranged_Toggle_Placeholder.started -= DoomTogglePlaceholder;
         destroyer.Player.Disable();
     }
 
@@ -581,6 +588,43 @@ public class Player : MonoBehaviour
     private void TurboToggle(InputAction.CallbackContext obj)
     {
         restraintMeterScript.ToggleTurbo();
+    }
+
+
+    //placeholder
+    [SerializeField] private int attackIndex = 1;
+    private void DoomTogglePlaceholder(InputAction.CallbackContext obj)
+    {
+        attackIndex++;
+        if(attackIndex > 6) { attackIndex = 1; }
+    }
+    
+    private void DoomAttacks(InputAction.CallbackContext obj)
+    {
+        switch(attackIndex)
+        {
+            case 1:
+                playerAttack.DoomSling();
+                break;
+            case 2:
+                playerAttack.DoomRocket();
+                break;
+            case 3:
+                playerAttack.DoomTrowel();
+                break;
+            case 4:
+                playerAttack.DoomBomb();
+                break;
+            case 5:
+                playerAttack.DoomBall();
+                break;
+            case 6:
+                playerAttack.DoomPaint();
+                break;
+            default:
+                playerAttack.DoomSword();
+                break;
+        }
     }
 
     public bool Grounded()
