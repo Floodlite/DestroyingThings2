@@ -105,6 +105,14 @@ public class PlayerScoreHandler : MonoBehaviour
             AddPoints(collectPoints * collectMultiplier);
         }
 
+        if (other.CompareTag("Big Collect"))
+        {
+            orbsCollected++;
+            orbsCollectedOverall++;
+            Destroy(other.gameObject);
+            AddPoints(4f * collectPoints * collectMultiplier);
+        }
+
         //Deliveries
         if (other.CompareTag("Target"))
         {
