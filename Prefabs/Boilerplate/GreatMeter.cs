@@ -26,16 +26,25 @@ public class GreatMeter : MonoBehaviour
         boss=4,
         done=5,
     };
-    private MeterMode currentMeterMode = MeterMode.none;
+    [SerializeField] private MeterMode currentMeterMode = MeterMode.none;
     private SpawnWave waveSpawner;
     private int dangerIncrease = 2;
+
+    private GameObject[] pointParents; //Parent objects for all the collectables objects
+    [SerializeField] private Dictionary<GameObject, bool> orbs = new Dictionary<GameObject, bool>(); //True: active
+    [SerializeField] private List<GameObject> allOrbs;
+    private int reactivatedOrbs = 0;
+    private int cycleOrbsToReactivate = 0;
+    [SerializeField] private float provokePercentage = 0f; //Controls how likely enemies are likely to switch from BASE to CHASE mode
 
     private void Awake()
     {
         scoreHandlerScripts = FindObjectsByType<PlayerScoreHandler>(FindObjectsSortMode.InstanceID);
         waveSpawner = FindObjectsByType<SpawnWave>(FindObjectsSortMode.InstanceID)[0];
+        pointParents = GameObject.FindGameObjectsWithTag("Point Parent");
         multiplierMultiplier = 1f;
         timeElapsed = 0f;
+        reactivatedOrbs = 0;
         cycleDuration = 45f;
         countdownActive = false;
         ChangePointMultipliers(1f, 1f);
@@ -44,7 +53,9 @@ public class GreatMeter : MonoBehaviour
 
     private void Start()
     {
+        orbs = SetOrbs(pointParents);
         StartingGun();
+        InitOrbs(20);
     }
 
     private void Update()
@@ -75,6 +86,90 @@ public class GreatMeter : MonoBehaviour
         Debug.Log("Go!");
         AdvanceCycles();
         countdownActive = true;
+    }
+
+    private void UpdateOrb(GameObject orb, bool active)
+    {
+        orbs[orb] = active;
+
+        MeshRenderer meshRenderer = orb.GetComponent<MeshRenderer>();
+        Collider collider = orb.GetComponent<Collider>();
+        if(meshRenderer != null)
+        {
+            meshRenderer.enabled = orbs[orb];
+        }
+        if(collider != null)
+        {
+            collider.enabled = orbs[orb];
+        }
+    }
+
+    private bool IsOrbEnabled(GameObject orb)
+    {
+        MeshRenderer meshRenderer = orb.GetComponent<MeshRenderer>();
+        if(meshRenderer != null) { return meshRenderer.enabled; }
+        return false;
+    }
+
+    private Dictionary<GameObject, bool> SetOrbs(GameObject[] parents)
+    {
+        Dictionary<GameObject, bool> points = new Dictionary<GameObject, bool>();
+        foreach(GameObject parent in parents) {
+            foreach (GameObject childTransform in parent.transform)
+            {
+                if (childTransform.gameObject != parent.gameObject && (childTransform.CompareTag("Collect") || childTransform.CompareTag("Big Collect")))
+                {
+                    points.Add(childTransform.gameObject, false); //Everything should start deactivated
+                    UpdateOrb(childTransform.gameObject, false);
+                    allOrbs.Add(childTransform.gameObject);
+                }
+            }
+        }
+        return points;
+    }
+
+    private void ReactivateOrbs()
+    {
+        int changedOrbs = 0;
+        while(changedOrbs < cycleOrbsToReactivate) //Maybe add a "-1" to right side of condition just in case of rounding problems
+        {
+            int chosenIndex =  UnityEngine.Random.Range(0, allOrbs.Count-1);
+            GameObject chosenOrb = allOrbs[chosenIndex];
+            if(IsOrbEnabled(chosenOrb))
+            {
+                continue;
+            }
+            
+            UpdateOrb(chosenOrb, true);
+        }
+
+        /*
+        100 orbs
+        10 cycles
+        20 orbs should be activated at the start
+        8 orbs should be activated each cycle
+        */
+    }
+
+    private void InitOrbs(float percentage)
+    {
+        int orbCount = allOrbs.Count;
+        if(orbCount % percentage != 0) { /*do something*/ }
+        reactivatedOrbs = (int) (orbCount * (percentage/100));
+        cycleOrbsToReactivate = (orbCount - reactivatedOrbs) / maxCycles;
+
+        int changedOrbs = 0;
+        while(changedOrbs < reactivatedOrbs)
+        {
+            int chosenIndex =  UnityEngine.Random.Range(0, allOrbs.Count-1);
+            GameObject chosenOrb = allOrbs[chosenIndex];
+            if(IsOrbEnabled(chosenOrb))
+            {
+                continue;
+            }
+            
+            UpdateOrb(chosenOrb, true);
+        }
     }
 
     private void UpdatePlayerMeterMultipliers()
@@ -150,7 +245,28 @@ public class GreatMeter : MonoBehaviour
         }
 
         waveSpawner.NextWave();
+        ReactivateOrbs();
         UpdatePlayerMeterMultipliers();
+        AlterEnemies();
+        provokePercentage = Mathf.Clamp(provokePercentage+15f, 80f, provokePercentage+10f);
+    }
+
+    private void AlterEnemies()
+    {
+        EnemyChase[] enemies = FindObjectsByType<EnemyChase>(FindObjectsSortMode.None);
+        foreach(EnemyChase enemy in enemies)
+        {
+            if(enemy.GetEnemyRole() == EnemyChase.EnemyRole.CHASE)
+            {
+                continue;
+            }
+
+            int randy = UnityEngine.Random.Range(1, 101);
+            if(randy >= provokePercentage)
+            {
+                enemy.SwitchRole(EnemyChase.EnemyRole.CHASE);
+            }
+        }
     }
 
     private string FormatTime(float timeElapsed)

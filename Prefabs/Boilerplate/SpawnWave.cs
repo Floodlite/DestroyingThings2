@@ -137,19 +137,7 @@ public class SpawnWave : MonoBehaviour
             spawnPoints[key] = false;
         }
         
-<<<<<<< Updated upstream
-        if(currentWave + 1 > maxWave)
-        {
-            Debug.Log("All waves cleared!");
-        }
-        else {
-            currentWave++;
-            maxDanger += dangerIncrease;
-            ChooseEnemies();
-        }
-=======
         currentDanger = 0f;
         ChooseEnemies();
->>>>>>> Stashed changes
     }
 }
