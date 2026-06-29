@@ -1,2 +1,0 @@
-Terrain Notice
-Add triangular prisms or spheres under peaks to avoid aberrant clipping
