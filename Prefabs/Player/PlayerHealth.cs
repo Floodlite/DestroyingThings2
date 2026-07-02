@@ -1,9 +1,12 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerHealth : MonoBehaviour
 {
     [SerializeField] private int maxHealth = 8;
     [SerializeField] private int health = 8;
+    [SerializeField] private bool iFrames = false;
+    private float iFramesUptime = 0.2f;
     [SerializeField] private PlayerScoreHandler scoreHandler;
     [SerializeField] private RestraintMeter restraintMeterScript;
 
@@ -15,6 +18,7 @@ public class PlayerHealth : MonoBehaviour
 
     private void Start()
     {
+        iFrames = false;
         ResetHP();
     }
 
@@ -25,6 +29,7 @@ public class PlayerHealth : MonoBehaviour
 
     public void LoseHP(int healthLoss)
     {
+        if(iFrames) { return; }
         health -= healthLoss;
         Debug.Log("Player " + health);
         if (health <= 0)
@@ -33,6 +38,7 @@ public class PlayerHealth : MonoBehaviour
             return;
         }
         if(restraintMeterScript != null) { restraintMeterScript.AddRestraintClamped(healthLoss/2); }
+        StartCoroutine(IFrames());
     }
 
     public void GainHP(int healthGain)
@@ -56,5 +62,32 @@ public class PlayerHealth : MonoBehaviour
             scoreHandler.MultiplyPoints(0.8f);
         }
         Destroy(gameObject);
+    }
+
+    private IEnumerator IFrames()
+    {
+        iFrames = true;
+        PulseColorOn();
+        yield return new WaitForSeconds(iFramesUptime);
+        iFrames = false;
+        PulseColorOff();
+    }
+
+    private void PulseColorOn()
+    {
+        foreach (SkinnedMeshRenderer renderer in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            renderer.material.EnableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", Color.white);
+        }
+    }
+
+    private void PulseColorOff()
+    {
+        foreach (SkinnedMeshRenderer renderer in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            renderer.material.DisableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", Color.black);
+        }
     }
 }

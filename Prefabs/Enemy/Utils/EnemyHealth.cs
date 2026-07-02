@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections;
 using System.Collections.Generic;
 
 public class EnemyHealth : MonoBehaviour
@@ -7,6 +8,8 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private ConstructorConjunction constructors;
     [SerializeField] private int maxHealth = 3;
     [SerializeField] private int health = 3;
+    [SerializeField] private bool iFrames = false;
+    private float iFramesUptime = 0.25f;
     [SerializeField] private Transform enemyRoot;
     [SerializeField] private bool isDead = false;
     public bool IsDead => isDead;
@@ -173,14 +176,6 @@ public class EnemyHealth : MonoBehaviour
         StopMovement();
         MakeIntangible();
         StopEnemyBehaviours();
-
-        //Award points to the player who dealt the last blow
-        if(lastAttackedBy != null)
-        {
-            PlayerScoreHandler playerScoreScript = lastAttackedBy.gameObject.GetComponent<PlayerScoreHandler>();
-            playerScoreScript.AddPoints(constructors.GetPoints() * playerScoreScript.GetKillMultiplier());
-            playerScoreScript.AddToEnemiesKilled();
-        }
 
         if(waveSpawner != null) {
             waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
@@ -425,18 +420,15 @@ public class EnemyHealth : MonoBehaviour
     //Makes this enemy lose health when getting punched
     private void OnTriggerEnter(Collider other)
     {
-        if (isDead)
-        {
-            return;
-        }
+        if (isDead) { return; }
+        if(iFrames) { return; }
 
         Player player = other.GetComponentInParent<Player>();
 
         if (!other.CompareTag("Punch") && !other.CompareTag("Ranged"))
         {
             return;
-        }
-
+        } 
         if (player != null)
         {
             if (other.CompareTag("Punch"))  {
@@ -449,6 +441,34 @@ public class EnemyHealth : MonoBehaviour
         if(other.CompareTag("Ranged"))
         {
             LoseHP(1);
+        }
+        StartCoroutine(IFrames());
+    }
+
+    private IEnumerator IFrames()
+    {
+        iFrames = true;
+        PulseColorOn();
+        yield return new WaitForSeconds(iFramesUptime);
+        iFrames = false;
+        PulseColorOff();
+    }
+
+    private void PulseColorOn()
+    {
+        foreach (SkinnedMeshRenderer renderer in enemyRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            renderer.material.EnableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", Color.white);
+        }
+    }
+
+    private void PulseColorOff()
+    {
+        foreach (SkinnedMeshRenderer renderer in enemyRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            renderer.material.DisableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", Color.black);
         }
     }
 }
