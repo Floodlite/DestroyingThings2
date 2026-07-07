@@ -23,4 +23,9 @@ https://www.cgtrader.com/designers/eleven-never?utm_source=credit&utm_source=cre
 https://www.cgtrader.com/designers/vankhanhnguyen682?utm_source=credit&utm_source=credit_item_page
 https://www.cgtrader.com/designers/assets-marexheaven?utm_source=credit&utm_source=credit_item_page
 https://www.cgtrader.com/designers/leonardcooper1965?utm_source=credit&utm_source=credit_item_page
+<<<<<<< Updated upstream
 https://www.cgtrader.com/designers/asmir?utm_source=credit&utm_source=credit_item_page
+=======
+https://www.cgtrader.com/designers/asmir?utm_source=credit&utm_source=credit_item_page
+https://www.cgtrader.com/designers/methan-modeling?utm_source=credit&utm_source=credit_item_page
+>>>>>>> Stashed changes

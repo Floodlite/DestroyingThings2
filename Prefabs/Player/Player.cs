@@ -35,7 +35,6 @@ public class Player : MonoBehaviour
 
     [SerializeField] private bool boxHit = false;
     [SerializeField] private float boxDistance = 3f;
-    [SerializeField] private RaycastHit objectHit;
 
     [SerializeField] private Vector3 gizmoCubeVector = new Vector3(0f, 1.5f, 0f);
 
@@ -54,8 +53,15 @@ public class Player : MonoBehaviour
     private bool punchInProgress;
     private float holdTime;
     [SerializeField] private float throttle = 1;
+<<<<<<< Updated upstream
     private float hoverForce = 0.055f;
     private bool freeJump = true;
+=======
+    private float hoverForce = 0.005f;
+    private bool freeJump = true;
+    [SerializeField] private bool slowmoDodge = false;
+    [SerializeField] private Collider collider;
+>>>>>>> Stashed changes
 
     [SerializeField] private RestraintMeter restraintMeterScript;
     
@@ -65,6 +71,10 @@ public class Player : MonoBehaviour
     {
         rb = this.GetComponent<Rigidbody>();
         destroyer = new Destroyer();
+<<<<<<< Updated upstream
+=======
+        collider = GetComponent<Collider>();
+>>>>>>> Stashed changes
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic; //Formerly ContinuousSpeculative
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         restraintMeterScript = this.GetComponent<RestraintMeter>();
@@ -150,8 +160,10 @@ public class Player : MonoBehaviour
     private void FixedUpdate()
     {
         yourSpeed = moveSpeed * storedSpeed * airborneMovement * accelSpeed;
+
         moveDirection += move.ReadValue<Vector2>().x * GetCameraR(playerCamera) * yourSpeed;
-        moveDirection += move.ReadValue<Vector2>().y * GetCameraF(playerCamera) * yourSpeed;
+        moveDirection += move.ReadValue<Vector2>().y * GetCameraF(playerCamera) * yourSpeed;       
+        
         movingDirection = moveDirection;
         
         /*if (movingDirection != Vector3.zero && !sneaking && accelerationEnabled) {
@@ -169,7 +181,7 @@ public class Player : MonoBehaviour
         }
 
 
-        rb.AddForce(moveDirection, ForceMode.Impulse); //IMPORTANT
+        rb.AddForce(moveDirection, ForceMode.Impulse); //IMPORTANT!!!
         
         
         //rb.AddForce(moveDirection, ForceMode.Acceleration);
@@ -629,9 +641,10 @@ public class Player : MonoBehaviour
 
     public bool Grounded()
     {
-        bool boxHit = Physics.BoxCast(GetComponent<Collider>().bounds.center, transform.localScale * 0.75f, Vector3.down, out objectHit, transform.rotation, boxDistance);
+        if(collider == null) { return false; }
 
-        if (boxHit)
+        bool boxHit = Physics.BoxCast(collider.bounds.center, transform.localScale * 0.75f, Vector3.down, out RaycastHit objectHit, transform.rotation, boxDistance);
+        if (boxHit /*&& (objectHit.collider.CompareTag("Water") || objectHit.collider.CompareTag("Fluid"))*/)
         {
             return true;
         }

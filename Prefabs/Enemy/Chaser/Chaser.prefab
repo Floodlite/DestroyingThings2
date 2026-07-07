@@ -831,9 +831,21 @@ MonoBehaviour:
   agent: {fileID: 6790344410250087533}
   player: {fileID: 0}
   playerLocation: {x: 0, y: 0, z: 0}
+<<<<<<< Updated upstream
   players: []
   navSampleRadius: 2
   constructors: {fileID: 0}
+=======
+  targetLocation: {x: 0, y: 0, z: 0}
+  players: []
+  corpses: []
+  navSampleRadius: 2
+  retreatDistance: 16
+  retreatMode: 1
+  constructors: {fileID: 0}
+  enemyRole: 1
+  chaseMode: 0
+>>>>>>> Stashed changes
 --- !u!114 &9071009968098783028
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -849,6 +861,10 @@ MonoBehaviour:
   constructors: {fileID: 0}
   maxHealth: 2
   health: 2
+<<<<<<< Updated upstream
+=======
+  iFrames: 0
+>>>>>>> Stashed changes
   enemyRoot: {fileID: 0}
   isDead: 0
   lastAttackedBy: {fileID: 0}
