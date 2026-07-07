@@ -29,33 +29,33 @@ public class GreatMeter : MonoBehaviour
     [SerializeField] private MeterMode currentMeterMode = MeterMode.none;
     private SpawnWave waveSpawner;
     private int dangerIncrease = 2;
-
-    private GameObject[] pointParents; //Parent objects for all the collectables objects
-    [SerializeField] private Dictionary<GameObject, bool> orbs = new Dictionary<GameObject, bool>(); //True: active
-    [SerializeField] private List<GameObject> allOrbs;
-    private int reactivatedOrbs = 0;
-    private int cycleOrbsToReactivate = 0;
     [SerializeField] private float provokePercentage = 0f; //Controls how likely enemies are likely to switch from BASE to CHASE mode
+
+    [SerializeField] private Dictionary<GameObject, bool> orbs = new Dictionary<GameObject, bool>(); //True: active
+    [SerializeField] private List<GameObject> allOrbs = new List<GameObject>();
+    private int startReactivatedOrbs = 0;
+    private int cycleOrbsToReactivate = 0;
 
     private void Awake()
     {
         scoreHandlerScripts = FindObjectsByType<PlayerScoreHandler>(FindObjectsSortMode.InstanceID);
         waveSpawner = FindObjectsByType<SpawnWave>(FindObjectsSortMode.InstanceID)[0];
-        pointParents = GameObject.FindGameObjectsWithTag("Point Parent");
+        
         multiplierMultiplier = 1f;
         timeElapsed = 0f;
-        reactivatedOrbs = 0;
+        startReactivatedOrbs = 0;
         cycleDuration = 45f;
         countdownActive = false;
         ChangePointMultipliers(1f, 1f);
         UpdatePlayerMeterMultipliers();
+        allOrbs.AddRange(GameObject.FindGameObjectsWithTag("Collect"));
+        allOrbs.AddRange(GameObject.FindGameObjectsWithTag("Big Collect"));
+        orbs = SetOrbDict();
     }
 
     private void Start()
     {
-        orbs = SetOrbs(pointParents);
-        StartingGun();
-        InitOrbs(20);
+        StartCoroutine(StartingGun());
     }
 
     private void Update()
@@ -85,7 +85,18 @@ public class GreatMeter : MonoBehaviour
         yield return new WaitForSeconds(1f);
         Debug.Log("Go!");
         AdvanceCycles();
+        InitOrbs(20f);
         countdownActive = true;
+    }
+
+    private Dictionary<GameObject, bool> SetOrbDict()
+    {
+        Dictionary<GameObject, bool> points = new Dictionary<GameObject, bool>();
+        foreach(GameObject orb in allOrbs) {
+            points.Add(orb, false); //All orbs should start deactivated
+            UpdateOrb(orb, false);
+        }
+        return points;
     }
 
     private void UpdateOrb(GameObject orb, bool active)
@@ -111,29 +122,12 @@ public class GreatMeter : MonoBehaviour
         return false;
     }
 
-    private Dictionary<GameObject, bool> SetOrbs(GameObject[] parents)
-    {
-        Dictionary<GameObject, bool> points = new Dictionary<GameObject, bool>();
-        foreach(GameObject parent in parents) {
-            foreach (GameObject childTransform in parent.transform)
-            {
-                if (childTransform.gameObject != parent.gameObject && (childTransform.CompareTag("Collect") || childTransform.CompareTag("Big Collect")))
-                {
-                    points.Add(childTransform.gameObject, false); //Everything should start deactivated
-                    UpdateOrb(childTransform.gameObject, false);
-                    allOrbs.Add(childTransform.gameObject);
-                }
-            }
-        }
-        return points;
-    }
-
     private void ReactivateOrbs()
     {
         int changedOrbs = 0;
-        while(changedOrbs < cycleOrbsToReactivate) //Maybe add a "-1" to right side of condition just in case of rounding problems
+        while(changedOrbs < cycleOrbsToReactivate) //Maybe add a "-1" to the right side of the condition just in case of rounding problems
         {
-            int chosenIndex =  UnityEngine.Random.Range(0, allOrbs.Count-1);
+            int chosenIndex =  UnityEngine.Random.Range(0, allOrbs.Count); //Max-exclusive
             GameObject chosenOrb = allOrbs[chosenIndex];
             if(IsOrbEnabled(chosenOrb))
             {
@@ -141,25 +135,26 @@ public class GreatMeter : MonoBehaviour
             }
             
             UpdateOrb(chosenOrb, true);
+            changedOrbs++;
         }
-
-        /*
-        100 orbs
-        10 cycles
-        20 orbs should be activated at the start
-        8 orbs should be activated each cycle
-        */
     }
 
     private void InitOrbs(float percentage)
     {
         int orbCount = allOrbs.Count;
         if(orbCount % percentage != 0) { /*do something*/ }
-        reactivatedOrbs = (int) (orbCount * (percentage/100));
-        cycleOrbsToReactivate = (orbCount - reactivatedOrbs) / maxCycles;
+
+        startReactivatedOrbs = (int) (orbCount * (percentage/100));
+        cycleOrbsToReactivate = (orbCount - startReactivatedOrbs) / maxCycles;
+        /*
+        100 orbs
+        10 cycles
+        20 orbs should be activated at the start
+        8 orbs should be activated each cycle
+        */
 
         int changedOrbs = 0;
-        while(changedOrbs < reactivatedOrbs)
+        while(changedOrbs < startReactivatedOrbs)
         {
             int chosenIndex =  UnityEngine.Random.Range(0, allOrbs.Count-1);
             GameObject chosenOrb = allOrbs[chosenIndex];
@@ -169,6 +164,7 @@ public class GreatMeter : MonoBehaviour
             }
             
             UpdateOrb(chosenOrb, true);
+            changedOrbs++;
         }
     }
 
