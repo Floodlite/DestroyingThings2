@@ -17,4 +17,12 @@ public class JockeySphere : MonoBehaviour
             jockeyChase.OppFound(true);
         }
     }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if(other.CompareTag("Player"))
+        {
+            jockeyChase.OppFound(false);
+        }
+    }
 }
