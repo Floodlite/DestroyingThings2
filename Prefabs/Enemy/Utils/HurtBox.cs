@@ -2,20 +2,30 @@ using UnityEngine;
 
 public class HurtBox : MonoBehaviour
 {
-    public EnemyConstructor enemy;
+    [SerializeField] private ConstructorConjunction constructors;
     [SerializeField] private EnemyHealth enemyHealth;
 
     private void Awake()
     {
-        if (enemyHealth == null)
-        {
-            enemyHealth = GetComponentInParent<EnemyHealth>();
-        }
+        enemyHealth = GetComponentInParent<EnemyHealth>();
+        if(enemyHealth == null) { GetComponent<EnemyHealth>(); }
+        constructors = GetComponentInParent<ConstructorConjunction>();
+        if(constructors == null) { GetComponent<ConstructorConjunction>(); }
     }
 
     public int GetDamage()
     {
-        return enemy.enemyDamage;
+        return constructors.GetDamage();
+    }
+
+    //Use when spawning projectiles
+    public void SetConstructors(ConstructorConjunction boaConstructor)
+    {
+        constructors = boaConstructor;
+    }
+    public void SetHealthScript(EnemyHealth healthScript)
+    {
+        enemyHealth = healthScript;
     }
 
     private void OnTriggerEnter(Collider other)

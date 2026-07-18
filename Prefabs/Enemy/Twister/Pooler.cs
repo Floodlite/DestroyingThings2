@@ -11,6 +11,9 @@ public class Pooler : MonoBehaviour
     private static GameObject traps;
     private static GameObject waveEnemies;
     private static GameObject spawnedEnemies;
+    private static GameObject orbs;
+    private static GameObject spawnPoints;
+    private static GameObject splines;
     private static Dictionary<GameObject, ObjectPool<GameObject>> poolDict;
     private static Dictionary<GameObject, GameObject> cloneDict;
 
@@ -24,6 +27,9 @@ public class Pooler : MonoBehaviour
         traps,
         waveEnemies,
         spawnedEnemies,
+        orbs,
+        spawnPoints,
+        splines,
     }
 
     public static PoolType PoolingType;
@@ -48,6 +54,12 @@ public class Pooler : MonoBehaviour
         waveEnemies.transform.SetParent(emptyPool.transform);
         spawnedEnemies = new GameObject("Spawned Enemies");
         spawnedEnemies.transform.SetParent(emptyPool.transform);
+        orbs = new GameObject("Orbs");
+        orbs.transform.SetParent(emptyPool.transform);
+        spawnPoints = new GameObject("Spawn Points");
+        spawnPoints.transform.SetParent(emptyPool.transform);
+        splines = new GameObject("Splines");
+        splines.transform.SetParent(emptyPool.transform);
         
         if(doNotDestroyOnLoad) { DontDestroyOnLoad(emptyPool.transform.root); }
     }
@@ -55,7 +67,7 @@ public class Pooler : MonoBehaviour
     private static void FillPool(GameObject prefab, Vector3 position, Quaternion rotation, PoolType poolType = PoolType.objects)
     {
         ObjectPool<GameObject> pool = new ObjectPool<GameObject>(
-            createFunc: () => CreateObject(prefab, position, rotation, poolType),
+            createFunc: () => CreateObject(prefab, Vector3.zero, Quaternion.identity, poolType),
             actionOnGet: OnGetObject,
             actionOnRelease: OnRelease,
             actionOnDestroy: OnDrain
@@ -66,7 +78,7 @@ public class Pooler : MonoBehaviour
     private static void FillPool(GameObject prefab, Transform parent, Quaternion rotation, PoolType poolType = PoolType.objects)
     {
         ObjectPool<GameObject> pool = new ObjectPool<GameObject>(
-            createFunc: () => CreateObject(prefab, parent, rotation, poolType),
+            createFunc: () => CreateObject(prefab, parent, Quaternion.identity, poolType),
             actionOnGet: OnGetObject,
             actionOnRelease: OnRelease,
             actionOnDestroy: OnDrain
@@ -126,6 +138,12 @@ public class Pooler : MonoBehaviour
                 return waveEnemies;
             case PoolType.spawnedEnemies:
                 return spawnedEnemies;
+            case PoolType.orbs:
+                return orbs;
+            case PoolType.spawnPoints:
+                return spawnPoints;
+            case PoolType.splines:
+                return splines;
             default:
                 return null;
         }

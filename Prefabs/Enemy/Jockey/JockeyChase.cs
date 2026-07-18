@@ -1,7 +1,5 @@
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.Splines;
-using Unity.Mathematics;
 using System.Collections;
 
 public class JockeyChase : MonoBehaviour
@@ -17,6 +15,7 @@ public class JockeyChase : MonoBehaviour
    [SerializeField] private Rigidbody rb;
    [SerializeField] private ConstructorConjunction constructors;
    [SerializeField] private bool oppFound = false;
+   private bool startAttacking = false;
    [SerializeField] private float distancePercentage = 0f;
    [SerializeField] private int attempts = 0;
    private float splineLength;
@@ -26,13 +25,16 @@ public class JockeyChase : MonoBehaviour
    [SerializeField] private float playerEncroachmentFactor = 0.5f;
    [SerializeField] private FirecrackerFire fFire;
    [SerializeField] private bool stunned = false;
-   [SerializeField] private float stunDuration = 5f;
+   [SerializeField] private float stunDuration = 8f;
    [SerializeField] private float flightHeight = 5f; //Fun to say
-
+   private Vector3 startPosition;
+   private Vector3 spawnPosition;
+   private Quaternion spawnRotation;
 
 
     private void Awake()
     {
+        startPosition = this.transform.position;
         rb = GetComponent<Rigidbody>();
         constructors = GetComponent<ConstructorConjunction>();
         players = FindObjectsByType<Player>(FindObjectsSortMode.None);
@@ -45,6 +47,8 @@ public class JockeyChase : MonoBehaviour
         closestPlayer = FindClosestPlayer();
         InitializeSpline();
         flightHeight = FindFlightHeight();
+        startAttacking = false;
+        StartCoroutine(BeginAttacking());
     }
 
     private float FindFlightHeight() {
@@ -74,6 +78,7 @@ public class JockeyChase : MonoBehaviour
 
         distancePercentage = 0f;
         CaclulateSplineLength(chosenSplineContainer);
+        currentSplineTemplate = null;
         PickRandomSpline();
     }
 
@@ -102,7 +107,7 @@ public class JockeyChase : MonoBehaviour
         if(stunned) { return; }
 
         closestPlayer = FindClosestPlayer();
-        if(oppFound) { FlyToPlayer(); return; }
+        if(oppFound && startAttacking) { FlyToPlayer(); return; }
             //fFire.enabled = true; Save for Absolute varianct
 
 
@@ -209,28 +214,28 @@ public class JockeyChase : MonoBehaviour
                 directionToPlayer = Vector3.zero;
             }
 
-            Vector3 randomRotationOffset = new Vector3(UnityEngine.Random.Range(-180, 180), 
-                UnityEngine.Random.Range(-180, 180), 
-                UnityEngine.Random.Range(-180, 180));
-            Vector3 randomScaleMultiplier = new Vector3(UnityEngine.Random.Range(10, 21) / 10f,
-                UnityEngine.Random.Range(10, 21) / 10f,
-                UnityEngine.Random.Range(10, 21) / 10f);
+            Vector3 randomRotationOffset = new Vector3(UnityEngine.Random.Range(-10, 10), 
+                UnityEngine.Random.Range(-360, 360), 
+                UnityEngine.Random.Range(-10, 10));
+            Vector3 randomScaleMultiplier = new Vector3(UnityEngine.Random.Range(10, 18) / 10f,
+                UnityEngine.Random.Range(10, 18) / 10f,
+                UnityEngine.Random.Range(10, 18) / 10f);
             Vector3 randomPositionOffset = new Vector3(UnityEngine.Random.Range(-10f, 10f),
-                UnityEngine.Random.Range(-2f, 2f),
+                UnityEngine.Random.Range(-2f, 10f),
                 UnityEngine.Random.Range(-10f, 10f));
 
             GameObject objSpline = templateSpline.gameObject;
-            Vector3 spawnPosition = objSpline.transform.position + directionToPlayer + randomPositionOffset;
-            Quaternion spawnRotation = objSpline.transform.rotation * Quaternion.Euler(randomRotationOffset);
+            spawnPosition = transform.position + directionToPlayer + randomPositionOffset;
+            spawnRotation = objSpline.transform.rotation * Quaternion.Euler(randomRotationOffset);
             GameObject spawnedSpline = Pooler.SpawnObject(objSpline, spawnPosition, spawnRotation, Pooler.PoolType.splines);
 
             if (spawnedSpline != null)
             {
-                Vector3 baseScale = Vector3.one;
+                Vector3 baseScale = templateSpline.transform.localScale;
                 Vector3 newScale = new Vector3(
-                    Mathf.Clamp(baseScale.x * randomScaleMultiplier.x, 0.25f, 4f),
-                    Mathf.Clamp(baseScale.y * randomScaleMultiplier.y, 0.25f, 4f),
-                    Mathf.Clamp(baseScale.z * randomScaleMultiplier.z, 0.25f, 4f));
+                    Mathf.Clamp(baseScale.x * randomScaleMultiplier.x, baseScale.x * 0.5f, baseScale.x * 2f),
+                    Mathf.Clamp(baseScale.y * randomScaleMultiplier.y, baseScale.y * 0.5f, baseScale.y * 2f),
+                    Mathf.Clamp(baseScale.z * randomScaleMultiplier.z, baseScale.z * 0.5f, baseScale.z * 2f));
                 spawnedSpline.transform.localScale = newScale;
             }
 
@@ -268,13 +273,21 @@ public class JockeyChase : MonoBehaviour
             return;
         }
 
-        currentSplineTemplate = templateSpline;
-        chosenSpline = templateSpline;
-        chosenSplineContainer = templateSplineContainer;
-        distancePercentage = 0f;
-        CaclulateSplineLength(chosenSplineContainer);
-        //Debug.LogWarning("Unable to find a valid spline placement after " + maxAttempts + " attempts. Falling back to the template spline.");
-        //Debug.LogWarning("Give up."); Never give up.
+        if (validSpawn == null)
+        {
+            // Re-spawn cleanly at the last attempted position rather than falling back
+            // to the raw (likely mis-positioned) template.
+            GameObject fallbackSpawn = Pooler.SpawnObject(templateSpline, spawnPosition, spawnRotation, Pooler.PoolType.splines);
+            if (fallbackSpawn != null)
+            {
+                currentSplineTemplate = templateSpline;
+                chosenSpline = fallbackSpawn;
+                chosenSplineContainer = fallbackSpawn.GetComponent<SplineContainer>();
+                distancePercentage = 0f;
+                CaclulateSplineLength(chosenSplineContainer);
+                return;
+            }
+        }
     }
 
      
@@ -391,5 +404,16 @@ public class JockeyChase : MonoBehaviour
     public void OppFound(bool newStatus)
     {
         oppFound = newStatus;
+    }
+
+    private IEnumerator BeginAttacking()
+    {
+        startAttacking = false;
+        yield return new WaitForSeconds(5f);
+        startAttacking = true;
+    }
+
+    private void ReturnToHomeBase() {
+        transform.position = startPosition;
     }
 }

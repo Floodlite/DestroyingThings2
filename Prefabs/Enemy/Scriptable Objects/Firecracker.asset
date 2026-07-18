@@ -18,5 +18,5 @@ MonoBehaviour:
   enemySpeed: 10
   enemyHealth: 2
   dangerValue: 3
-  pointsValue: 2.5
+  pointsValue: 7
   special: 0
