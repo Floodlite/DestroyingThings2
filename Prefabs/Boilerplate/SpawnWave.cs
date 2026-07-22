@@ -6,40 +6,24 @@ public class SpawnWave : MonoBehaviour
 {
     //Object records the spawn point itself, boolean tracks whether the spot is taken (false --> empty, true --> filled)
     [SerializeField] private Dictionary<GameObject, bool> spawnPoints = new Dictionary<GameObject, bool>();
+    [SerializeField] private List<GameObject> allSpawns = new List<GameObject>();
     [SerializeField] private List<GameObject> enemyPool = new List<GameObject>(); //Assign in inspector
     [SerializeField] private List<GameObject> enemiesOfWave = new List<GameObject>();
     [SerializeField] private List<GameObject> enemiesAlive = new List<GameObject>();
-    [SerializeField] private bool everyoneDead = false;
-    [SerializeField] private bool doneChoosing = false;
 
     [SerializeField] private float maxDanger = 8f;
     [SerializeField] private float currentDanger = 0f;
 
-    [SerializeField] private int currentWave = 1;
-
-    [SerializeField] private int maxWave = 8;
-
     private void Awake()
     {
-        spawnPoints = SetSpawns(this.transform, "Spawn");
-        if(maxDanger == 0f) { maxDanger = 8f; }
-        currentWave = 1;
-        doneChoosing = false;
+        //spawnPoints = SetSpawns(this.transform, "Spawn");
+        allSpawns.AddRange(GameObject.FindGameObjectsWithTag("Spawn"));
+        spawnPoints = SetSpawnDict();
     }
 
     private void Start()
     {
-        ChooseEnemies();
-    }
-
-    private void LateUpdate()
-    {
-        everyoneDead = AllEnemiesDead();
-        if(everyoneDead && doneChoosing)
-        {
-            NextWave(2f);
-            doneChoosing = false;
-        }
+        if(maxDanger <= 0f) { maxDanger = 8f; }
     }
 
     private Dictionary<GameObject, bool> SetSpawns(Transform parent, string tag)
@@ -57,6 +41,18 @@ public class SpawnWave : MonoBehaviour
         return points;
     }
 
+    private Dictionary<GameObject, bool> SetSpawnDict()
+    {
+        Dictionary<GameObject, bool> points = new Dictionary<GameObject, bool>();
+        foreach(GameObject orb in allSpawns) {
+            points.Add(orb, false);
+
+            MeshRenderer renderer = orb.GetComponent<MeshRenderer>();
+            if(renderer != null) { renderer.enabled = false; }
+        }
+        return points;
+    }
+
     private void ChooseEnemies()
     {
         currentDanger = 0f;
@@ -70,10 +66,8 @@ public class SpawnWave : MonoBehaviour
             GameObject chosenObject = enemyPool[chosenIndex];
             ConstructorConjunction constructors = chosenObject.GetComponentInChildren<ConstructorConjunction>();
             if(constructors == null) { Debug.LogWarning("Constructor Conjunction not found on " + chosenObject);  continue; }
-            //EnemyConstructor enemy = constructors.GetEnemy();
-            //if(enemy == null) { Debug.LogWarning("Constructors not found on " + chosenObject);  continue; }
+            
             float enemyDangerValue = constructors.GetDangerValue();
-
             if(currentDanger + enemyDangerValue > maxDanger) { 
                 continue; 
             }
@@ -95,13 +89,13 @@ public class SpawnWave : MonoBehaviour
                 break;
             }
         }
-        doneChoosing = true;
         return;
     }
 
     private void SpawnEnemy(GameObject enemyToSpawn)
     {
         //Notice: You cannot modify dictionary values in a standard foreach loop
+        int i = 0;
         foreach(GameObject key in spawnPoints.Keys.ToList())
         {
             //If the spot is already reserved (true), skip to the next one
@@ -115,37 +109,29 @@ public class SpawnWave : MonoBehaviour
             if(spawnedInstance != null)
             {
                 enemiesOfWave.Add(spawnedInstance);
+
+                EnemyChase enemyChase = spawnedInstance.GetComponentInChildren<EnemyChase>();
+                if(enemyChase != null)
+                {
+                    if(i % 2 == 0) { enemyChase.SwitchRole(EnemyChase.EnemyRole.BASE); }
+                    else { enemyChase.SwitchRole(EnemyChase.EnemyRole.CHASE); }
+                }
             }
             spawnPoints[key] = true;
+            i++;
         }
     }
 
-    /*
-    private bool AllEnemiesDead()
+    public void SetMaxDanger(int toChange)
     {
-        //Switch to FindObjectsSortMode.None if performance issues arise
-        enemiesAlive = FindObjectsByType<Reanimator>(FindObjectsSortMode.InstanceID);
-        foreach(Reanimator script in enemiesAlive)
-        {
-            if(!script.IsDead()) {
-                return false;
-            }
-            //TODO: Remove enemies from their pool and change the length of the array accordingly
-        }
-        return true;
+        maxDanger += toChange;
+        if(maxDanger < 1) { maxDanger = 8; }
     }
-    */
 
-    private bool AllEnemiesDead()
+    public void RaiseMaxDanger(int toAdd)
     {
-        if(enemiesAlive.Count < 1)
-        {   
-            Debug.Log("Everyone is dead");
-            return true;
-        }
-        else {
-            return false;
-        }
+        maxDanger += toAdd;
+        if(maxDanger < 1) { maxDanger = 8; }
     }
 
     public void AddToEnemiesAlive(GameObject enemyToAdd)
@@ -158,6 +144,11 @@ public class SpawnWave : MonoBehaviour
         enemiesAlive.Remove(enemyToRemove);
     }
 
+    public int GetNumberOfEnemiesAlive()
+    {
+        return enemiesAlive.Count;
+    }
+
     private void ClearWaveEnemies()
     {
         foreach(GameObject enemy in enemiesOfWave) {
@@ -165,7 +156,7 @@ public class SpawnWave : MonoBehaviour
         }
     }
 
-    private void NextWave(float dangerIncrease=2f)
+    public void NextWave()
     {
         ClearWaveEnemies();
 
@@ -175,15 +166,7 @@ public class SpawnWave : MonoBehaviour
             spawnPoints[key] = false;
         }
         
-        if(currentWave + 1 > maxWave)
-        {
-            Debug.Log("All waves cleared!");
-        }
-        else {
-            currentWave++;
-            currentDanger = 0f;
-            maxDanger += dangerIncrease;
-            ChooseEnemies();
-        }
+        currentDanger = 0f;
+        ChooseEnemies();
     }
 }
