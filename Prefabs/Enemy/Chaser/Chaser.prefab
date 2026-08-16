@@ -831,7 +831,6 @@ MonoBehaviour:
   agent: {fileID: 6790344410250087533}
   player: {fileID: 0}
   playerLocation: {x: 0, y: 0, z: 0}
-  targetLocation: {x: 0, y: 0, z: 0}
   players: []
   corpses: []
   closestPlayer: {fileID: 0}

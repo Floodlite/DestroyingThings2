@@ -1,12 +1,18 @@
 using UnityEngine;
 using Unity.AI.Navigation;
+using System.Collections;
 
 public class UpdateNavMesh : MonoBehaviour {
 
+    public NavMeshSurface[] surfaces;
+<<<<<<< Updated upstream
     public NavMeshSurface surface;
-    public bool on = true;
+=======
+>>>>>>> Stashed changes
+    [SerializeField] private bool on = true;
+    [SerializeField] private bool asyncMode = true;
 
-    private void Start()
+    private void Awake()
     {
         if(on) { 
             RebuildNavMesh(); 
@@ -21,6 +27,8 @@ public class UpdateNavMesh : MonoBehaviour {
 
     public void RebuildNavMesh()
     {
-        surface.BuildNavMesh();
+        foreach(NavMeshSurface surface in surfaces) {
+            surface.BuildNavMesh();
+        }
     }
 }

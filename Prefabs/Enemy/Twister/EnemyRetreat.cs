@@ -17,6 +17,7 @@ public class EnemyRetreat : MonoBehaviour
 
     private void Awake()
     {
+     
         constructors = GetComponent<ConstructorConjunction>();
     }
 
