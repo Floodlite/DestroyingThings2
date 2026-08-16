@@ -64,6 +64,21 @@ sysinfo.txt
 *.unitypackage.meta
 *.app
 
+# Ignore common image formats
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.webp
+
+# Ignore common 3D model formats
+*.obj
+*.blend
+*.fbx
+*.mtl
+*.zip
+
 # Crashlytics generated file
 crashlytics-build.properties
 

@@ -131,15 +131,28 @@ public class TwisterFire : MonoBehaviour
 
         Vector3 directionToPlayer = closestPlayer.transform.position - transform.position;
         GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 0f), Quaternion.identity, Pooler.PoolType.bullets);
+        
+        HurtBox hurtBox = ball.GetComponent<HurtBox>();
+        if(hurtBox != null)
+        {
+            hurtBox.SetConstructors(constructors);
+            EnemyHealth enemyHealth = GetComponent<EnemyHealth>(); //Didn't feel like giving this its own dedicated variable
+            hurtBox.SetHealthScript(enemyHealth);
+        }
+        
         Rigidbody ballRb = ball.GetComponent<Rigidbody>();
         ballRb.linearVelocity = directionToPlayer * projectileSpeed;
-        StartCoroutine(SelfDestruct(ball, projectileLifespan));    
+
+        ProjectileExpiration projectileExpiration = ball.GetComponentInChildren<ProjectileExpiration>();
+        projectileExpiration.StartSelfDestruct();    
         //Debug.Log("Pew");
     }
 
+    /*Expiration logic has been moved to the projectile object itself
     private IEnumerator SelfDestruct(GameObject obj, float projectileLifespan)
     {
         yield return new WaitForSeconds(projectileLifespan);
         Pooler.ReleaseObjectToPool(obj, Pooler.PoolType.bullets);
     }  
+    */
 }

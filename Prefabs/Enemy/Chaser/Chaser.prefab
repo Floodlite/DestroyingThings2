@@ -831,21 +831,15 @@ MonoBehaviour:
   agent: {fileID: 6790344410250087533}
   player: {fileID: 0}
   playerLocation: {x: 0, y: 0, z: 0}
-<<<<<<< Updated upstream
-  players: []
-  navSampleRadius: 2
-  constructors: {fileID: 0}
-=======
-  targetLocation: {x: 0, y: 0, z: 0}
   players: []
   corpses: []
+  closestPlayer: {fileID: 0}
   navSampleRadius: 2
   retreatDistance: 16
   retreatMode: 1
   constructors: {fileID: 0}
   enemyRole: 1
   chaseMode: 0
->>>>>>> Stashed changes
 --- !u!114 &9071009968098783028
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -861,13 +855,11 @@ MonoBehaviour:
   constructors: {fileID: 0}
   maxHealth: 2
   health: 2
-<<<<<<< Updated upstream
-=======
   iFrames: 0
->>>>>>> Stashed changes
   enemyRoot: {fileID: 0}
   isDead: 0
   lastAttackedBy: {fileID: 0}
+  invincible: 0
 --- !u!114 &4028975766203662188
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1168,8 +1160,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8982449267230972768}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -10.4927, y: 0, z: 15.43}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 8.109281, y: 0.70875, z: -2.2088299}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1189,3 +1181,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Reanimator
   dead: 0
+  resurrected: 0

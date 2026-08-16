@@ -3,6 +3,7 @@ using UnityEngine;
 public class Reanimator : MonoBehaviour
 {
     [SerializeField] private bool dead = false;
+    [SerializeField] private bool resurrected = false; //Whether or not this enemy has previously been brought back from the dead
     private EnemyHealth controlledEnemy;
 
     private void Awake()
@@ -23,6 +24,17 @@ public class Reanimator : MonoBehaviour
     {
         return dead;
     }
+
+    public void SetResStatus(bool newStatus)
+    {
+        resurrected = newStatus;
+    }
+
+    public bool GetResStatus()
+    {
+        return resurrected;
+    }
+
 
     private void OnTriggerEnter(Collider other)
     {
