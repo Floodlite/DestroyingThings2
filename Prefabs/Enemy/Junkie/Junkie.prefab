@@ -116,6 +116,10 @@ GameObject:
   - component: {fileID: 6952621158902251993}
   - component: {fileID: 5699729645214137506}
   - component: {fileID: 7063068465831826017}
+<<<<<<< Updated upstream
+=======
+  - component: {fileID: 3697757015793989896}
+>>>>>>> Stashed changes
   m_Layer: 9
   m_Name: Enemy
   m_TagString: Enemy
@@ -358,10 +362,42 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bcef354b10c95a04fa04f4494d1c2277, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Invincibility
+<<<<<<< Updated upstream
   enemyHealth: {fileID: 0}
   invincibilityDuration: 50
   shield: {fileID: 6392794255539555260}
   shieldRenderer: {fileID: 3259852893236692106}
+=======
+  enemyHealth: {fileID: 4147209354745060505}
+  invincibilityDuration: 50
+  shield: {fileID: 6392794255539555260}
+  shieldRenderer: {fileID: 3259852893236692106}
+--- !u!114 &3697757015793989896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1330003980630059827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5db03544035ec8440bc7ad03c36bc120, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyChase
+  agent: {fileID: 7461877698098374324}
+  player: {fileID: 0}
+  playerLocation: {x: 0, y: 0, z: 0}
+  targetLocation: {x: 0, y: 0, z: 0}
+  players: []
+  corpses: []
+  closestPlayer: {fileID: 0}
+  navSampleRadius: 4
+  retreatDistance: 16
+  retreatMode: 0
+  constructors: {fileID: 7391954311550419112}
+  enemyRole: 1
+  chaseMode: 2
+>>>>>>> Stashed changes
 --- !u!1 &1523747651372594993
 GameObject:
   m_ObjectHideFlags: 0

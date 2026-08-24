@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerScoreHandler : MonoBehaviour
 {
@@ -25,10 +26,16 @@ public class PlayerScoreHandler : MonoBehaviour
     private float deliveryMultiplier = 1f;
     private float collectMultiplier = 1f;
     private float enemyKillMultiplier = 1f;
+    private float meterMultiplierCollect = 1f;
+    private float meterMultiplierKill = 1f;
 
     [SerializeField] RestraintMeter restraintMeterScript;
 
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
     private void Awake()
     {
         restraintMeterScript = GetComponent<RestraintMeter>();
@@ -43,6 +50,7 @@ public class PlayerScoreHandler : MonoBehaviour
 
     public void AddPoints(float pointsToAdd)
     {
+         
         points += pointsToAdd;
         overallPoints += pointsToAdd;
         restraintMeterScript.AddRestraint((int)(pointsToAdd/2));
@@ -94,9 +102,19 @@ public class PlayerScoreHandler : MonoBehaviour
         enemiesKilledOverall++;
     }
 
+    public void SetMeterMultiplierCollect(float newMultiplier)
+    {
+        meterMultiplierCollect = newMultiplier;
+    }
+
+    public void SetMeterMultiplierKill(float newMultiplier)
+    {
+        meterMultiplierKill = newMultiplier;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
-        //Collectibles
+        //Collectibles (Collectables?)
         if (other.CompareTag("Collect"))
         {
             orbsCollected++;
@@ -105,12 +123,27 @@ public class PlayerScoreHandler : MonoBehaviour
             AddPoints(collectPoints * collectMultiplier);
         }
 
+<<<<<<< Updated upstream
+=======
+        if (other.CompareTag("Timed Collect"))
+        {
+            orbsCollected++;
+            orbsCollectedOverall++;
+            StartCoroutine(ReactivateOrb(other.gameObject, 10f));
+            AddPoints((collectPoints-1) * collectMultiplier);
+        }
+
+>>>>>>> Stashed changes
         if (other.CompareTag("Big Collect"))
         {
             orbsCollected++;
             orbsCollectedOverall++;
             Destroy(other.gameObject);
+<<<<<<< Updated upstream
             AddPoints(4f * collectPoints * collectMultiplier);
+=======
+            AddPoints(8f * collectPoints * collectMultiplier);
+>>>>>>> Stashed changes
         }
 
         //Deliveries
@@ -135,5 +168,12 @@ public class PlayerScoreHandler : MonoBehaviour
                 deliveriesMadeOverall++;
             }
         }
+    }
+
+    private IEnumerator ReactivateOrb(GameObject orb, float waitTime)
+    {
+        orb.SetActive(false);
+        yield return new WaitForSeconds(waitTime);
+        orb.SetActive(true);
     }
 }

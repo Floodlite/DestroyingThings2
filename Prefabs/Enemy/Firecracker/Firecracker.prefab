@@ -16,6 +16,8 @@ GameObject:
   - component: {fileID: 574174834754484572}
   - component: {fileID: 7879898684961752170}
   - component: {fileID: 2994372718756981547}
+  - component: {fileID: 2484933203068762269}
+  - component: {fileID: 4797424168703040582}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -47,7 +49,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5115630241775931}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c47f9c0cf1a6a943aec27d29fff0abe, type: 3}
   m_Name: 
@@ -213,6 +215,61 @@ MonoBehaviour:
   isDead: 0
   lastAttackedBy: {fileID: 0}
   invincible: 0
+<<<<<<< Updated upstream
+=======
+--- !u!114 &2484933203068762269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5115630241775931}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5db03544035ec8440bc7ad03c36bc120, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyChase
+  agent: {fileID: 574174834754484572}
+  player: {fileID: 0}
+  playerLocation: {x: 0, y: 0, z: 0}
+  targetLocation: {x: 0, y: 0, z: 0}
+  players: []
+  corpses: []
+  closestPlayer: {fileID: 0}
+  navSampleRadius: 4
+  retreatDistance: 16
+  retreatMode: 0
+  constructors: {fileID: 7596146171327992561}
+  enemyRole: 1
+  chaseMode: 1
+--- !u!54 &4797424168703040582
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5115630241775931}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+>>>>>>> Stashed changes
 --- !u!1 &249093869565482315
 GameObject:
   m_ObjectHideFlags: 0

@@ -18,6 +18,10 @@ GameObject:
   - component: {fileID: 6671051102247410918}
   - component: {fileID: 6907132320476513933}
   - component: {fileID: 349096187448609075}
+<<<<<<< Updated upstream
+=======
+  - component: {fileID: 2502116780138899355}
+>>>>>>> Stashed changes
   m_Layer: 0
   m_Name: Cylinder
   m_TagString: Untagged
@@ -214,7 +218,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4333180268589249546}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c47f9c0cf1a6a943aec27d29fff0abe, type: 3}
   m_Name: 
@@ -250,6 +254,34 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+<<<<<<< Updated upstream
+=======
+--- !u!114 &2502116780138899355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4333180268589249546}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5db03544035ec8440bc7ad03c36bc120, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyChase
+  agent: {fileID: 349096187448609075}
+  player: {fileID: 0}
+  playerLocation: {x: 0, y: 0, z: 0}
+  targetLocation: {x: 0, y: 0, z: 0}
+  players: []
+  corpses: []
+  closestPlayer: {fileID: 0}
+  navSampleRadius: 4
+  retreatDistance: 16
+  retreatMode: 0
+  constructors: {fileID: 6671051102247410918}
+  enemyRole: 1
+  chaseMode: 1
+>>>>>>> Stashed changes
 --- !u!1 &8398087322588901358
 GameObject:
   m_ObjectHideFlags: 0

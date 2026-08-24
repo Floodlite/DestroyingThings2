@@ -6,7 +6,10 @@ public class UpdateNavMesh : MonoBehaviour {
 
     public NavMeshSurface[] surfaces;
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     public NavMeshSurface surface;
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
     [SerializeField] private bool on = true;

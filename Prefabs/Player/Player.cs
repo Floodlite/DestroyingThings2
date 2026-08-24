@@ -6,6 +6,8 @@ public class Player : MonoBehaviour
 {
     private Destroyer destroyer;
     private InputAction move;
+    private InputAction cameraRotate;
+    private InputAction cameraZoom;
 
     public Rigidbody rb;
 
@@ -27,6 +29,7 @@ public class Player : MonoBehaviour
     private Vector3 moveDirection = Vector3.zero;
     public Vector3 movingDirection;
     [SerializeField] private Camera playerCamera;
+    [SerializeField] private GameObject focal;
     [SerializeField] private bool breakdanceMode = false;
     [SerializeField] private bool hoofRecharged = true;
     private bool isDashing = false;
@@ -54,6 +57,7 @@ public class Player : MonoBehaviour
     private float holdTime;
     [SerializeField] private float throttle = 1;
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     private float hoverForce = 0.055f;
     private bool freeJump = true;
 =======
@@ -62,8 +66,16 @@ public class Player : MonoBehaviour
     [SerializeField] private bool slowmoDodge = false;
     [SerializeField] private Collider collider;
 >>>>>>> Stashed changes
+=======
+    private float hoverForce = 0.005f;
+    [SerializeField] private bool freeJump = true;
+    private bool trampolineJump = false;
+    [SerializeField] private bool slowmoDodge = false;
+    [SerializeField] private Collider collider;
+>>>>>>> Stashed changes
 
     [SerializeField] private RestraintMeter restraintMeterScript;
+    private CameraFollowClose cameraFollowScript;
     
 
 
@@ -72,12 +84,17 @@ public class Player : MonoBehaviour
         rb = this.GetComponent<Rigidbody>();
         destroyer = new Destroyer();
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+        collider = GetComponent<Collider>();
+>>>>>>> Stashed changes
 =======
         collider = GetComponent<Collider>();
 >>>>>>> Stashed changes
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic; //Formerly ContinuousSpeculative
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         restraintMeterScript = this.GetComponent<RestraintMeter>();
+        cameraFollowScript = playerCamera.GetComponent<CameraFollowClose>();
     }
 
     void Start()
@@ -90,6 +107,15 @@ public class Player : MonoBehaviour
 
         move = destroyer.Player.Move;
         destroyer.Player.Move.Enable();
+
+        cameraRotate = destroyer.Player.Rotate_Camera;
+        destroyer.Player.Rotate_Camera.Enable();
+
+        cameraZoom = destroyer.Player.Zoom;
+        destroyer.Player.Zoom.Enable();
+
+        destroyer.Player.Reset_Camera.started += ResetCamera;
+        destroyer.Player.Reset_Camera.Enable();
 
         destroyer.Player.Breakdance.started += BreakOut;
         destroyer.Player.Breakdance.Enable();
@@ -112,6 +138,10 @@ public class Player : MonoBehaviour
         destroyer.Player.Punch.started += BeginPunch;
         destroyer.Player.Punch.Enable();
         destroyer.Player.Punch.canceled += ReleasePunch;
+
+        destroyer.Player.Grab.started += Grab;
+        destroyer.Player.Grab.Enable();
+        destroyer.Player.Grab.canceled += ReleaseGrab;
 
         //destroyer.Player.High_Jump.started += HighJump;
         //destroyer.Player.High_Jump.Enable();
@@ -150,9 +180,12 @@ public class Player : MonoBehaviour
         destroyer.Player.Accelerate.started -= Accelerator;
         destroyer.Player.Punch.started -= BeginPunch;
         destroyer.Player.Punch.canceled -= ReleasePunch;
+        destroyer.Player.Grab.started -= Grab;
+        destroyer.Player.Grab.canceled -= ReleaseGrab;
         destroyer.Player.Turbo_Toggle.started -= TurboToggle;
         destroyer.Player.Ranged_Punch.started -= DoomAttacks;
         destroyer.Player.Ranged_Toggle_Placeholder.started -= DoomTogglePlaceholder;
+        destroyer.Player.Reset_Camera.started -= ResetCamera;
         destroyer.Player.Disable();
     }
 
@@ -199,6 +232,12 @@ public class Player : MonoBehaviour
                 rb.linearVelocity += Vector3.up * extraGravity;
             }
         }
+
+        //focal.transform.rotation = Quaternion.Euler(new Vector3(focal.transform.rotation.x, cameraRotate.ReadValue<Vector2>().x*15f, focal.transform.rotation.z));
+        //playerCamera.transform.RotateAround(transform.position, Vector3.up, cameraRotate.ReadValue<Vector2>().x*5f);
+        cameraFollowScript.RotateYaw(cameraRotate.ReadValue<Vector2>().x*-1f);
+        cameraFollowScript.RotatePitch(cameraRotate.ReadValue<Vector2>().y*1f);
+        cameraFollowScript.ZoomCamera(cameraZoom.ReadValue<Vector2>().y*-0.6f);
 
         if (!breakdanceMode) { LookDirection(); }
     }
@@ -285,6 +324,11 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void ResetCamera(InputAction.CallbackContext obj)
+    {
+        cameraFollowScript.ResetCameraSettings();
+    }
+
     private void GetOut(InputAction.CallbackContext obj)
     {
         Debug.Log("Hmph.");
@@ -323,35 +367,62 @@ public class Player : MonoBehaviour
         */
     }
 
-    private void HowToJump(InputAction.CallbackContext obj)
+    private void HowToJump(InputAction.CallbackContext obj) //It's time you learned how
     {
         if(restraintMeterScript.GetTurboStatus() && restraintMeterScript.SpendRestraint(restraintMeterScript.GetTurboJumpCost()))
         {
             HighJump();
         }
         else {
-            if (Grounded())
+            if (trampolineJump || Grounded())
             {
-                //It's time you learned how
                 moveDirection += Vector3.up * jumpHeight;
+                trampolineJump = false;
                 StartCoroutine(GroundCheck());
+            }
+            else if(!Grounded() && Physics.BoxCast(collider.bounds.center, transform.localScale, 
+                Vector3.forward, out RaycastHit objectHit, transform.rotation, boxDistance*0.65f))
+            {
+                //TODO: Wall-jump that launches the player backwards, not forwards
+                Debug.Log("Parkour! " + -transform.forward);
+                //moveDirection += Vector3.up * jumpHeight * 1.55f;
+                //moveDirection += transform.forward * jumpHeight * -16.5f;
+                Vector3 upImpulse = Vector3.up * 3.55f;
+                Vector3 backImpulse = -transform.forward * 10.5f;
+                if(IsPathBlocked(transform.forward, upImpulse.magnitude)) { upImpulse *= 0.5f; }
+                if(IsPathBlocked(transform.forward, backImpulse.magnitude)) { backImpulse *= 0.5f; }
+                rb.AddForce((upImpulse + backImpulse)*jumpHeight, ForceMode.Impulse);
             }
             else if(!Grounded() && restraintMeterScript.GetTurboStatus() && restraintMeterScript.SpendRestraint(restraintMeterScript.GetBonusJumpCost()))
             {
-                moveDirection += Vector3.up * jumpHeight * 0.75f;
+                moveDirection += Vector3.up * jumpHeight * 0.9f;
                 StartCoroutine(GroundCheck());
             }
             else if(!Grounded() && freeJump)
             {
+<<<<<<< Updated upstream
                 freeJump = false;
+=======
+                SetFreeJump(false);
+>>>>>>> Stashed changes
                 moveDirection += Vector3.up * jumpHeight * 1.5f;
                 StartCoroutine(GroundCheck());
             }
             else {
+<<<<<<< Updated upstream
                 AirHover(1f);
                 //Air "hover"
+=======
+                AirHover(1.8f); //Air "hover"
+>>>>>>> Stashed changes
             }
         }
+    }
+
+    public void SetFreeJump(bool newStatus)
+    {
+        freeJump = newStatus;
+        trampolineJump = newStatus;
     }
 
     private void AirHover(float hoverMultiplier)
@@ -573,6 +644,42 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void Grab(InputAction.CallbackContext obj)
+    {
+        punchInProgress = true;
+    }
+
+    private void ReleaseGrab(InputAction.CallbackContext obj)
+    {
+        if(punchInProgress) {
+            if(!Grounded())
+            {
+                AirHover(1.05f);
+            }
+            punchDuration = basePunchDuration;
+            punchSize = basePunchSize;
+            if (drifting)
+            {
+                punchDuration *= 0.5f;
+                punchSize *= 0.75f;
+            }
+            if (sneaking)
+            {
+                punchDuration *= 1.5f;
+                punchSize *= 1.25f;
+            }
+            if(accelerationEnabled)
+            {
+                punchDuration *= 0.85f;
+                punchSize *= 1.15f;
+            }
+            currentTime = Time.time;
+            holdTime = currentTime - startTime;
+            playerAttack.ThrowHands(punchDuration, punchSize);
+            punchInProgress = false;
+        }
+    }
+
     public int GetDamage()
     {
         return attackDamage;
@@ -601,6 +708,8 @@ public class Player : MonoBehaviour
     {
         restraintMeterScript.ToggleTurbo();
     }
+
+    
 
 
     //placeholder
@@ -669,7 +778,6 @@ public class Player : MonoBehaviour
             Gizmos.DrawWireCube(transform.position + Vector3.down * boxDistance, transform.localScale);
         }
 
-        
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position+gizmoCubeVector, 2f);
     }
@@ -696,7 +804,11 @@ public class Player : MonoBehaviour
 
         if(!freeJump)
         {
+<<<<<<< Updated upstream
             freeJump = true;
+=======
+            SetFreeJump(true);
+>>>>>>> Stashed changes
         }
     }
 
