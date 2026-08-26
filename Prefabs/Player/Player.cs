@@ -56,23 +56,11 @@ public class Player : MonoBehaviour
     private bool punchInProgress;
     private float holdTime;
     [SerializeField] private float throttle = 1;
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-    private float hoverForce = 0.055f;
-    private bool freeJump = true;
-=======
-    private float hoverForce = 0.005f;
-    private bool freeJump = true;
-    [SerializeField] private bool slowmoDodge = false;
-    [SerializeField] private Collider collider;
->>>>>>> Stashed changes
-=======
     private float hoverForce = 0.005f;
     [SerializeField] private bool freeJump = true;
     private bool trampolineJump = false;
     [SerializeField] private bool slowmoDodge = false;
     [SerializeField] private Collider collider;
->>>>>>> Stashed changes
 
     [SerializeField] private RestraintMeter restraintMeterScript;
     private CameraFollowClose cameraFollowScript;
@@ -83,14 +71,7 @@ public class Player : MonoBehaviour
     {
         rb = this.GetComponent<Rigidbody>();
         destroyer = new Destroyer();
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
         collider = GetComponent<Collider>();
->>>>>>> Stashed changes
-=======
-        collider = GetComponent<Collider>();
->>>>>>> Stashed changes
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic; //Formerly ContinuousSpeculative
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         restraintMeterScript = this.GetComponent<RestraintMeter>();
@@ -400,21 +381,12 @@ public class Player : MonoBehaviour
             }
             else if(!Grounded() && freeJump)
             {
-<<<<<<< Updated upstream
-                freeJump = false;
-=======
                 SetFreeJump(false);
->>>>>>> Stashed changes
                 moveDirection += Vector3.up * jumpHeight * 1.5f;
                 StartCoroutine(GroundCheck());
             }
             else {
-<<<<<<< Updated upstream
-                AirHover(1f);
-                //Air "hover"
-=======
                 AirHover(1.8f); //Air "hover"
->>>>>>> Stashed changes
             }
         }
     }
@@ -804,11 +776,7 @@ public class Player : MonoBehaviour
 
         if(!freeJump)
         {
-<<<<<<< Updated upstream
-            freeJump = true;
-=======
             SetFreeJump(true);
->>>>>>> Stashed changes
         }
     }
 
