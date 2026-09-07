@@ -2,19 +2,23 @@ using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
 
+//https://www.youtube.com/watch?v=eL_zHQEju8s
 public class Buoyancy : MonoBehaviour
 {
-    //public List<GameObject> floatingObjects = new List<GameObject>();
-    public Dictionary<GameObject, Rigidbody> floatingObjects = new Dictionary<GameObject, Rigidbody>();
-    //TODO: Change GameObject key type to GameObject[] to include all floaters instead of just the parent
+    [SerializeField] private Dictionary<GameObject, Rigidbody> floatingObjects = new Dictionary<GameObject, Rigidbody>();
+    [SerializeField] private Dictionary<Rigidbody, int> floaterCounts = new Dictionary<Rigidbody, int>();
 
-    [SerializeField] private float depthBeforeSubmerged = -0.1f;
+    [SerializeField] private float depthBeforeSubmerged = 0.5f;
     [SerializeField] private float displacementAmount = 3f;
     [SerializeField] private int objectCount = 0;
-    private bool floatersOnly = true;
+
+    [SerializeField] private bool bonusGravity = false;
+
+    [SerializeField] private float waterDrag = 0.99f;
+    [SerializeField] private float waterAngularDrag = 0.5f;
 
     //Waves
-    [SerializeField] private bool waves = false;
+    [SerializeField] private bool waves = false; //busted
     [SerializeField] private float amplitude = 1f;
     [SerializeField] private float length = 2f;
     [SerializeField] private float speed = 1f;
@@ -29,64 +33,73 @@ public class Buoyancy : MonoBehaviour
         foreach(GameObject objectum in floatingObjects.Keys.ToList())
         {
             Transform tform = objectum.transform;
+            Rigidbody rb = floatingObjects[objectum];
+            if(bonusGravity) { rb.AddForceAtPosition(Physics.gravity / floaterCounts[rb], transform.position, ForceMode.Acceleration); }
             float waveHeight = GetWaveHeight(tform.position.x);
             //if(objectum.transform.position.y < this.gameObject.transform.position.y)
             if(waves && objectum.transform.position.y < waveHeight)
             {
                 //Debug.Log("Applying forces");
                 float displacementMultiplier = Mathf.Clamp01((waveHeight - tform.position.y) / depthBeforeSubmerged) * displacementAmount;
-                floatingObjects[objectum].AddForce(new Vector3(0f, Mathf.Abs(Physics.gravity.y) * displacementMultiplier, 0f), ForceMode.Acceleration);
+                rb.AddForceAtPosition(new Vector3(0f, Mathf.Abs(Physics.gravity.y) * displacementMultiplier, 0f), tform.position, ForceMode.Acceleration);
             }
+
             else if(!waves && objectum.transform.position.y < this.transform.position.y)
             {
                 float displacementMultiplier = Mathf.Clamp01(-tform.position.y / depthBeforeSubmerged) * displacementAmount;
-                floatingObjects[objectum].AddForce(new Vector3(0f, Mathf.Abs(Physics.gravity.y) * displacementMultiplier, 0f), ForceMode.Acceleration);
+                //rb.AddForce(new Vector3(0f, Mathf.Abs(Physics.gravity.y) * displacementMultiplier, 0f), ForceMode.Acceleration);
+                rb.AddForceAtPosition(new Vector3(0f, Mathf.Abs(Physics.gravity.y) * displacementMultiplier, 0f), tform.position, ForceMode.Acceleration);
+                //AddTorque: Applies rotational force to an object
+                rb.AddTorque(displacementMultiplier * -rb.linearVelocity * waterDrag * Time.fixedDeltaTime, ForceMode.VelocityChange);
+                rb.AddTorque(displacementMultiplier * -rb.angularVelocity * waterAngularDrag * Time.fixedDeltaTime, ForceMode.VelocityChange);
             }
-
-
 
 
         }
     }
 
 
-    public float GetWaveHeight(float x)
+    private float GetWaveHeight(float x)
     {
         return amplitude * Mathf.Sin(x / length + offset);
     }
 
-
-
     private void OnTriggerEnter(Collider other)
     {
-        if(floatersOnly && !other.CompareTag("Floater")) { return; }
         GameObject obj = other.gameObject;
-        Rigidbody rb = obj.GetComponent<Rigidbody>();
-        if(rb == null) { obj.GetComponentInChildren<Rigidbody>(); }
+        if(obj == null) { return; }
+        Rigidbody rb = obj.GetComponentInParent<Rigidbody>();
         if(rb == null) { return; }
         
         foreach(GameObject objectum in floatingObjects.Keys.ToList())
         {
             if(objectum == obj) { return; } //No duplicate objects allowed
         }
-        //floatingObjects.Add(obj.transform.parent.gameObject);
         floatingObjects.Add(obj, rb);
+        if(floaterCounts.ContainsKey(rb))
+        {
+            floaterCounts[rb]++;
+        }
+        else
+        {
+            floaterCounts.Add(rb, 1);
+        }
         objectCount++;
     }
 
     private void OnTriggerExit(Collider other)
     {
         GameObject obj = other.gameObject;
-        Rigidbody rb = obj.GetComponent<Rigidbody>();
-        if(rb == null) { obj.GetComponentInChildren<Rigidbody>(); }
+        if(obj == null) { return; }
+        Rigidbody rb = obj.GetComponentInParent<Rigidbody>();
         if(rb == null) { return; }
         
-        foreach(GameObject objectum in floatingObjects.Keys.ToList())
+        if(floatingObjects.ContainsKey(obj))
         {
-            if(objectum == obj) { 
-                floatingObjects.Remove(obj); 
-                objectCount--;
-            }
+            floatingObjects.Remove(obj);
+            floaterCounts[rb]--;
+            if(floaterCounts[rb] == 0) { floaterCounts.Remove(rb); }
+            objectCount--;
         }
     }
 
