@@ -32,7 +32,6 @@ public class TrapActivate : MonoBehaviour
         trapHurtBoxCollider.enabled = false;
 
         hurtBoxStartRadius = hurtBox.transform.localScale.x;
-        ShrinkHurtBox(0.5f);
     }
 
     private List<GameObject> AddObjectsOfTag(Transform parent, string tag)
@@ -139,6 +138,8 @@ public class TrapActivate : MonoBehaviour
             hurtBox.transform.localScale = targetScale;
             yield break;
         }
+
+        ShrinkHurtBox(0.5f);
 
         while (timeElapsed < armTime)
         {

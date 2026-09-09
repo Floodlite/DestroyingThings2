@@ -118,18 +118,22 @@ public class PlayerAttack : MonoBehaviour
 
     [SerializeField] private bool holdingEnemy = false;
     [SerializeField] private bool enemyConstrained = false;
-    [SerializeField] private GameObject heldObject;
+    [SerializeField] private GameObject heldObject = null;
     [SerializeField] private EnemyChase enemyChase;
     [SerializeField] private EnemyHealth heldHealth;
+    [SerializeField] private Projectile projectile;
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private GameObject grabBox;
     [SerializeField] private MeshRenderer grabMr;
     [SerializeField] private BoxCollider grabBc;
-    [SerializeField] private float throwForce = 6f;
+    [SerializeField] private ConstructorConjunction constructors;
+    [SerializeField] private Transform orignialParent;
+    [SerializeField] private float throwForce = 10f;
     private Collider boxCollider;
     private Rigidbody foeRb;
     private Collider heldCollider;
     private const float maxFallTime = 8f;
+    private Color thrownColor = new Color(143/255f, 61f/255f, 20/255f);
 
     public void ThrowHands(float punchUptime, float punchDimensions)
     {
@@ -138,6 +142,7 @@ public class PlayerAttack : MonoBehaviour
         }
     }
     
+    //P.S. I forgot that yield break existed
     IEnumerator GrabCycle(float punchDuration, float punchSize)
     {
         //Grow
@@ -160,33 +165,51 @@ public class PlayerAttack : MonoBehaviour
 
             //Grab
             if(!holdingEnemy) {
-                bool boxCast = Physics.BoxCast(boxCollider.bounds.center, transform.localScale, 
-                    Vector3.forward, out RaycastHit objectHit, transform.rotation);
-                heldObject = objectHit.collider.gameObject; 
-                heldCollider = heldObject.GetComponentInChildren<Collider>();
-                foeRb = heldObject.GetComponent<Rigidbody>();
-                if(foeRb==null) { foeRb = heldObject.GetComponentInParent<Rigidbody>(); }
-                if(foeRb==null) { foeRb = heldObject.GetComponentInChildren<Rigidbody>(); }
-                if(foeRb!=null)
-                {
-                    enemyChase = heldObject.GetComponentInChildren<EnemyChase>();
-                    agent = heldObject.GetComponentInChildren<NavMeshAgent>();
-                    heldHealth = heldObject.GetComponentInChildren<EnemyHealth>();
-                    if(enemyChase!=null) { enemyChase.enabled = false; }
-                    if(agent!=null) { agent.enabled = false; }
-                    if(heldHealth!=null && heldObject.GetComponentInChildren<Invincibility>()==null) { heldHealth.SetInvincibility(true); }
-                    enemyConstrained = true;
-
+                bool boxCast = Physics.BoxCast(boxCollider.bounds.center, boxCollider.transform.localScale/2f, 
+                    transform.forward, out RaycastHit objectHit, transform.rotation);
+                if(boxCast && objectHit.collider!=null) { heldObject = objectHit.collider.gameObject; }
+                if(heldObject != null && (heldObject.CompareTag("Fluid") || heldObject.CompareTag("Player") || heldObject.CompareTag("Floor"))) { //Banned tags
+                    heldObject = null; 
+                }
+                if(heldObject != null) {
+                    heldCollider = heldObject.GetComponent<Collider>();
+                    foeRb = heldObject.GetComponent<Rigidbody>();
+                    if(foeRb==null) { foeRb = heldObject.GetComponentInParent<Rigidbody>(); }
+                    if(foeRb==null) { foeRb = heldObject.GetComponentInChildren<Rigidbody>(); }
+                    if(foeRb!=null) //Object is confirmed to be grabbable
+                    {
+                        heldObject = foeRb.gameObject;
+                        constructors = heldObject.GetComponentInChildren<ConstructorConjunction>();
+                        if(!heldObject.CompareTag("Enemy") || (heldObject.CompareTag("Enemy") && (constructors!=null && constructors.CanBeGrabbed())))
+                        {
+                            if(heldCollider==null) { heldCollider = heldObject.GetComponentInChildren<Collider>(); }
+                            holdingEnemy = true;
+                            enemyChase = heldObject.GetComponentInChildren<EnemyChase>();
+                            agent = heldObject.GetComponentInChildren<NavMeshAgent>();
+                            heldHealth = heldObject.GetComponentInChildren<EnemyHealth>();
+                            if(enemyChase!=null) { enemyChase.enabled = false; }
+                            if(agent!=null) { agent.enabled = false; }
+                            if(heldHealth!=null && heldObject.GetComponentInChildren<Invincibility>()==null) { heldHealth.SetInvincibility(true); }
+                            enemyConstrained = true;
+                            orignialParent = heldObject.transform.parent;
+                            heldObject.transform.parent = null;
+                            projectile = heldObject.AddComponent(typeof(Projectile)) as Projectile;
+                            projectile.SetDamage(player.GetDamage());
+                            foeRb.isKinematic = true;
+                            if(heldObject!=null) { PulseColorThrownOn(heldObject); }
+                        }
+                    }
                 }
             }
 
             //Throw
-            else
-            {
+            else if(heldObject != null && foeRb!=null) {   
+                heldObject.transform.parent = orignialParent;
                 enemyConstrained = false;
-                foeRb.AddForce(player.transform.forward*throwForce, ForceMode.Impulse);
-                //TODO: Make the enemy be considered a damaging projectile while airborne
+                foeRb.isKinematic = false;
+                foeRb.AddForce(player.transform.forward*throwForce*foeRb.mass, ForceMode.Impulse);
                 StartCoroutine(ResetComponents());
+                holdingEnemy = false;
             }
 
 
@@ -208,7 +231,7 @@ public class PlayerAttack : MonoBehaviour
     private IEnumerator ResetComponents()
     {
         float timeElapsed = 0f;
-        while(!Grounded() || timeElapsed >= maxFallTime)
+        while(!Grounded() || timeElapsed < maxFallTime)
         {
             yield return new WaitForSeconds(0.1f);
             timeElapsed += 0.1f;
@@ -217,15 +240,20 @@ public class PlayerAttack : MonoBehaviour
         if(enemyChase!=null) { 
             enemyChase.enabled = true; 
         }
-        if(agent!=null) { 
+        if(agent!=null) {
             agent.enabled = true; 
+            //agent.Warp(transform.position);
         }
         if(heldHealth!=null && heldObject.GetComponentInChildren<Invincibility>()==null) { 
             heldHealth.SetInvincibility(false); 
         }
+        if(projectile!=null) {
+            projectile.YouHaveBeenDestroyed();
+        }
+
+        if(heldObject!=null) { PulseColorThrownOff(heldObject); }
         heldObject = null;
         foeRb = null;
-        agent.Warp(transform.position);
     }
 
     public bool Grounded()
@@ -245,10 +273,39 @@ public class PlayerAttack : MonoBehaviour
 
     private void Update()
     {
-        if(enemyConstrained)
+        if(enemyConstrained && heldObject != null)
         {
             //Holds the object above the player's head
-            heldObject.transform.position = player.transform.position + Vector3.up;
+            heldObject.transform.position = player.transform.position + Vector3.up +
+                new Vector3(0f, player.gameObject.transform.localScale.y+player.gameObject.transform.localScale.y*2f, 0f);
+        }
+    }
+
+    private void PulseColorThrownOn(GameObject thrownObject)
+    {
+        foreach (SkinnedMeshRenderer renderer in thrownObject.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            renderer.material.EnableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", thrownColor);
+        }
+        foreach (MeshRenderer renderer in thrownObject.GetComponentsInChildren<MeshRenderer>(true))
+        {
+            renderer.material.EnableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", thrownColor);
+        }
+    }
+
+    private void PulseColorThrownOff(GameObject thrownObject)
+    {
+        foreach (MeshRenderer renderer in thrownObject.GetComponentsInChildren<MeshRenderer>(true))
+        {
+            renderer.material.EnableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", thrownColor);
+        }
+        foreach (SkinnedMeshRenderer renderer in thrownObject.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            renderer.material.DisableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", Color.black);
         }
     }
 

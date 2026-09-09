@@ -218,7 +218,7 @@ public class Player : MonoBehaviour
         //playerCamera.transform.RotateAround(transform.position, Vector3.up, cameraRotate.ReadValue<Vector2>().x*5f);
         cameraFollowScript.RotateYaw(cameraRotate.ReadValue<Vector2>().x*-1f);
         cameraFollowScript.RotatePitch(cameraRotate.ReadValue<Vector2>().y*1f);
-        cameraFollowScript.ZoomCamera(cameraZoom.ReadValue<Vector2>().y*-0.6f);
+        cameraFollowScript.ZoomCamera(cameraZoom.ReadValue<Vector2>().y*-0.5f);
 
         if (!breakdanceMode) { LookDirection(); }
     }
@@ -725,7 +725,7 @@ public class Player : MonoBehaviour
         if(collider == null) { return false; }
 
         bool boxHit = Physics.BoxCast(collider.bounds.center, transform.localScale * 0.75f, Vector3.down, out RaycastHit objectHit, transform.rotation, boxDistance);
-        if (boxHit /*&& (objectHit.collider.CompareTag("Water") || objectHit.collider.CompareTag("Fluid"))*/)
+        if (boxHit && !objectHit.collider.CompareTag("Water"))
         {
             return true;
         }

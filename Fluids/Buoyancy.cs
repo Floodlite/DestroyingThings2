@@ -14,6 +14,7 @@ public class Buoyancy : MonoBehaviour
 
     [SerializeField] private bool bonusGravity = false;
 
+    [SerializeField] private bool torqueControls = false;
     [SerializeField] private float waterDrag = 0.99f;
     [SerializeField] private float waterAngularDrag = 0.5f;
 
@@ -28,6 +29,7 @@ public class Buoyancy : MonoBehaviour
     private void FixedUpdate()
     {
         offset += Time.deltaTime * speed;
+        if(offset >= 3600) { offset = 0; }
 
         if(floatingObjects.Count <= 0) { return; }
         foreach(GameObject objectum in floatingObjects.Keys.ToList())
@@ -42,19 +44,23 @@ public class Buoyancy : MonoBehaviour
                 //Debug.Log("Applying forces");
                 float displacementMultiplier = Mathf.Clamp01((waveHeight - tform.position.y) / depthBeforeSubmerged) * displacementAmount;
                 rb.AddForceAtPosition(new Vector3(0f, Mathf.Abs(Physics.gravity.y) * displacementMultiplier, 0f), tform.position, ForceMode.Acceleration);
+                if(torqueControls) {
+                    //AddTorque: Applies rotational force to an object
+                    rb.AddTorque(displacementMultiplier * -rb.linearVelocity * waterDrag * Time.fixedDeltaTime, ForceMode.VelocityChange);
+                    rb.AddTorque(displacementMultiplier * -rb.angularVelocity * waterAngularDrag * Time.fixedDeltaTime, ForceMode.VelocityChange);
+                }         
             }
-
             else if(!waves && objectum.transform.position.y < this.transform.position.y)
             {
                 float displacementMultiplier = Mathf.Clamp01(-tform.position.y / depthBeforeSubmerged) * displacementAmount;
                 //rb.AddForce(new Vector3(0f, Mathf.Abs(Physics.gravity.y) * displacementMultiplier, 0f), ForceMode.Acceleration);
                 rb.AddForceAtPosition(new Vector3(0f, Mathf.Abs(Physics.gravity.y) * displacementMultiplier, 0f), tform.position, ForceMode.Acceleration);
-                //AddTorque: Applies rotational force to an object
-                rb.AddTorque(displacementMultiplier * -rb.linearVelocity * waterDrag * Time.fixedDeltaTime, ForceMode.VelocityChange);
-                rb.AddTorque(displacementMultiplier * -rb.angularVelocity * waterAngularDrag * Time.fixedDeltaTime, ForceMode.VelocityChange);
+                if(torqueControls) {
+                    //AddTorque: Applies rotational force to an object
+                    rb.AddTorque(displacementMultiplier * -rb.linearVelocity * waterDrag * Time.fixedDeltaTime, ForceMode.VelocityChange);
+                    rb.AddTorque(displacementMultiplier * -rb.angularVelocity * waterAngularDrag * Time.fixedDeltaTime, ForceMode.VelocityChange);
+                }            
             }
-
-
         }
     }
 
@@ -66,6 +72,7 @@ public class Buoyancy : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if(other.CompareTag("Player")) { return; }
         GameObject obj = other.gameObject;
         if(obj == null) { return; }
         Rigidbody rb = obj.GetComponentInParent<Rigidbody>();
