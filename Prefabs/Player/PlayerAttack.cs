@@ -251,7 +251,7 @@ public class PlayerAttack : MonoBehaviour
             projectile.YouHaveBeenDestroyed();
         }
 
-        if(heldObject!=null) { PulseColorThrownOff(heldObject); }
+        if(heldObject!=null) { PulseColorThrownOff(heldObject.transform.parent.gameObject); }
         heldObject = null;
         foeRb = null;
     }
