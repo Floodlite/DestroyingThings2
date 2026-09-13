@@ -72,7 +72,7 @@ public class Buoyancy : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.CompareTag("Player")) { return; }
+        if(!other.CompareTag("Floater")) { return; }
         GameObject obj = other.gameObject;
         if(obj == null) { return; }
         Rigidbody rb = obj.GetComponentInParent<Rigidbody>();
@@ -96,6 +96,7 @@ public class Buoyancy : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
+        if(!other.CompareTag("Floater")) { return; }
         GameObject obj = other.gameObject;
         if(obj == null) { return; }
         Rigidbody rb = obj.GetComponentInParent<Rigidbody>();

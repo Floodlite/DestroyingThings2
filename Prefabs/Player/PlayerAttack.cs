@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
+using System.Collections.Generic;
 
 public class PlayerAttack : MonoBehaviour
 {
@@ -20,6 +21,7 @@ public class PlayerAttack : MonoBehaviour
         player = GetComponent<Player>();
         restraintMeterScript = GetComponent<RestraintMeter>();
         boxCollider = grabBox.GetComponent<Collider>();
+        playerColliders = GetComponentsInChildren<Collider>();
     }
 
     private void Start()
@@ -36,6 +38,14 @@ public class PlayerAttack : MonoBehaviour
 
     public void BringTheHurtII(float punchUptime, float punchDimensions)
     {
+        
+        if(holdingEnemy) //Cannot punch while holding an object
+        {
+            ThrowHands(punchUptime, punchDimensions);
+            return;
+        }
+
+
         /*
         * Full punch cycle:
         * Attack button pressed
@@ -132,6 +142,9 @@ public class PlayerAttack : MonoBehaviour
     private Collider boxCollider;
     private Rigidbody foeRb;
     private Collider heldCollider;
+    private Collider[] heldColliders;
+    private Collider[] playerColliders;
+    private readonly Dictionary<Renderer, Color> originalEmissionColors = new Dictionary<Renderer, Color>();
     private const float maxFallTime = 8f;
     private Color thrownColor = new Color(143/255f, 61f/255f, 20/255f);
 
@@ -165,15 +178,32 @@ public class PlayerAttack : MonoBehaviour
 
             //Grab
             if(!holdingEnemy) {
-                bool boxCast = Physics.BoxCast(boxCollider.bounds.center, boxCollider.transform.localScale/2f, 
-                    transform.forward, out RaycastHit objectHit, transform.rotation);
-                if(boxCast && objectHit.collider!=null) { heldObject = objectHit.collider.gameObject; }
+                Collider[] grabHits = Physics.OverlapBox(
+                    boxCollider.bounds.center,
+                    boxCollider.bounds.extents,
+                    boxCollider.transform.rotation,
+                    ~0,
+                    QueryTriggerInteraction.Ignore);
+                heldObject = null;
+                Rigidbody grabbedRigidbody = null;
+                foreach (Collider grabHit in grabHits)
+                {
+                    if (grabHit.attachedRigidbody != null)
+                    {
+                        heldObject = grabHit.gameObject;
+                        grabbedRigidbody = grabHit.attachedRigidbody;
+                        break;
+                    }
+                }
                 if(heldObject != null && (heldObject.CompareTag("Fluid") || heldObject.CompareTag("Player") || heldObject.CompareTag("Floor"))) { //Banned tags
                     heldObject = null; 
+                    Debug.Log("No grabbable object found");
                 }
                 if(heldObject != null) {
                     heldCollider = heldObject.GetComponent<Collider>();
-                    foeRb = heldObject.GetComponent<Rigidbody>();
+                    foeRb = grabbedRigidbody;
+                    if(foeRb==null) { foeRb = heldObject.GetComponent<Rigidbody>(); }
+                    if(foeRb==null) { foeRb = heldObject.GetComponent<Rigidbody>(); }
                     if(foeRb==null) { foeRb = heldObject.GetComponentInParent<Rigidbody>(); }
                     if(foeRb==null) { foeRb = heldObject.GetComponentInChildren<Rigidbody>(); }
                     if(foeRb!=null) //Object is confirmed to be grabbable
@@ -183,6 +213,8 @@ public class PlayerAttack : MonoBehaviour
                         if(!heldObject.CompareTag("Enemy") || (heldObject.CompareTag("Enemy") && (constructors!=null && constructors.CanBeGrabbed())))
                         {
                             if(heldCollider==null) { heldCollider = heldObject.GetComponentInChildren<Collider>(); }
+                            heldColliders = heldObject.GetComponentsInChildren<Collider>(true);
+                            SetHeldCollisionIgnored(true);
                             holdingEnemy = true;
                             enemyChase = heldObject.GetComponentInChildren<EnemyChase>();
                             agent = heldObject.GetComponentInChildren<NavMeshAgent>();
@@ -193,21 +225,26 @@ public class PlayerAttack : MonoBehaviour
                             enemyConstrained = true;
                             orignialParent = heldObject.transform.parent;
                             heldObject.transform.parent = null;
-                            projectile = heldObject.AddComponent(typeof(Projectile)) as Projectile;
+                            projectile = heldObject.AddComponent<Projectile>();
                             projectile.SetDamage(player.GetDamage());
                             foeRb.isKinematic = true;
                             if(heldObject!=null) { PulseColorThrownOn(heldObject); }
                         }
                     }
+                    else { Debug.Log("No rigidbody found"); }
                 }
             }
 
             //Throw
             else if(heldObject != null && foeRb!=null) {   
-                heldObject.transform.parent = orignialParent;
+                if(orignialParent!=null) { heldObject.transform.parent = orignialParent; }
                 enemyConstrained = false;
                 foeRb.isKinematic = false;
-                foeRb.AddForce(player.transform.forward*throwForce*foeRb.mass, ForceMode.Impulse);
+                SetHeldCollisionIgnored(false);
+                foeRb.linearVelocity = player.rb.linearVelocity + player.transform.forward * throwForce;
+                foeRb.angularVelocity = Vector3.zero;
+                PulseColorThrownOff(heldObject);
+
                 StartCoroutine(ResetComponents());
                 holdingEnemy = false;
             }
@@ -231,7 +268,7 @@ public class PlayerAttack : MonoBehaviour
     private IEnumerator ResetComponents()
     {
         float timeElapsed = 0f;
-        while(!Grounded() || timeElapsed < maxFallTime)
+        while(!Grounded() && timeElapsed < maxFallTime)
         {
             yield return new WaitForSeconds(0.1f);
             timeElapsed += 0.1f;
@@ -279,17 +316,20 @@ public class PlayerAttack : MonoBehaviour
             heldObject.transform.position = player.transform.position + Vector3.up +
                 new Vector3(0f, player.gameObject.transform.localScale.y+player.gameObject.transform.localScale.y*2f, 0f);
         }
+        if(heldObject == null) //Deal with traps exploding while held
+        {
+            holdingEnemy = false;
+            enemyConstrained = false;
+        }
     }
 
     private void PulseColorThrownOn(GameObject thrownObject)
     {
-        foreach (SkinnedMeshRenderer renderer in thrownObject.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        originalEmissionColors.Clear();
+        foreach (Renderer renderer in thrownObject.GetComponentsInChildren<Renderer>(true))
         {
-            renderer.material.EnableKeyword("_EMISSION");
-            renderer.material.SetColor("_EmissionColor", thrownColor);
-        }
-        foreach (MeshRenderer renderer in thrownObject.GetComponentsInChildren<MeshRenderer>(true))
-        {
+            if (!renderer.material.HasProperty("_EmissionColor")) { continue; }
+            originalEmissionColors[renderer] = renderer.material.GetColor("_EmissionColor");
             renderer.material.EnableKeyword("_EMISSION");
             renderer.material.SetColor("_EmissionColor", thrownColor);
         }
@@ -297,16 +337,45 @@ public class PlayerAttack : MonoBehaviour
 
     private void PulseColorThrownOff(GameObject thrownObject)
     {
-        foreach (MeshRenderer renderer in thrownObject.GetComponentsInChildren<MeshRenderer>(true))
+        foreach (KeyValuePair<Renderer, Color> entry in originalEmissionColors)
         {
-            renderer.material.EnableKeyword("_EMISSION");
-            renderer.material.SetColor("_EmissionColor", thrownColor);
+            if (entry.Key == null) { continue; }
+            entry.Key.material.SetColor("_EmissionColor", entry.Value);
         }
-        foreach (SkinnedMeshRenderer renderer in thrownObject.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        originalEmissionColors.Clear();
+    }
+
+    private void SetHeldCollisionIgnored(bool ignored)
+    {
+        if (heldColliders == null || playerColliders == null) { return; }
+
+        foreach (Collider heldCollider in heldColliders)
         {
-            renderer.material.DisableKeyword("_EMISSION");
-            renderer.material.SetColor("_EmissionColor", Color.black);
+            if (heldCollider == null) { continue; }
+            foreach (Collider playerCollider in playerColliders)
+            {
+                if (playerCollider == null || heldCollider == playerCollider) { continue; }
+                Physics.IgnoreCollision(heldCollider, playerCollider, ignored);
+            }
         }
+    }
+
+    private bool IsPathBlocked(Vector3 direction, float checkDistance)
+    {
+        if (direction.sqrMagnitude < 0.001f || checkDistance <= 0) {
+            return false;
+        }
+        
+        direction = direction.normalized;
+        
+        //SphereCast to check if path is blocked
+        if (Physics.SphereCast(transform.position, 0.4f, direction, out RaycastHit hit, checkDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            //Only block if collision is far enough ahead (not micro-collisions)
+            return (hit.distance > 0.1f);
+        }
+        
+        return false;
     }
 
 
