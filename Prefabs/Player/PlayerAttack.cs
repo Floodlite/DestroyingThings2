@@ -139,14 +139,15 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField] private ConstructorConjunction constructors;
     [SerializeField] private Transform orignialParent;
     [SerializeField] private float throwForce = 10f;
+    [SerializeField] private float maxFallTime = 8f;
     private Collider boxCollider;
     private Rigidbody foeRb;
     private Collider heldCollider;
     private Collider[] heldColliders;
     private Collider[] playerColliders;
+    private string[] bannedTags = {"Floor", "Fluid", "Player", "Chain"}; //Banned tags
     private readonly Dictionary<Renderer, Color> originalEmissionColors = new Dictionary<Renderer, Color>();
-    private const float maxFallTime = 8f;
-    private Color thrownColor = new Color(143/255f, 61f/255f, 20/255f);
+    private Color thrownColor = new Color(143/255f, 61/255f, 20/255f);
 
     public void ThrowHands(float punchUptime, float punchDimensions)
     {
@@ -160,20 +161,20 @@ public class PlayerAttack : MonoBehaviour
     {
         //Grow
         punchInProgress = true;
-        for(int i=0; i<punchCount; i++) {
+        for(int i=0; i<1; i++) {
             grabMr.enabled = false;
             grabBc.isTrigger = true;
             grabBc.enabled = false;
             boxSize = 0.2f;
             grabBox.transform.localScale = new Vector3(boxSize, boxSize, boxSize);
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.05f);
             grabMr.enabled = true;
-                while (boxSize < punchSize)
-                {
-                    boxSize += 0.1f;
-                    grabBox.transform.localScale = new Vector3(boxSize, boxSize, boxSize);
-                    yield return new WaitForSeconds(0.005f / (punchCount*1.05f));
-                }
+            while (boxSize < punchSize)
+            {
+                boxSize += 0.1f;
+                grabBox.transform.localScale = new Vector3(boxSize, boxSize, boxSize);
+                yield return new WaitForSeconds(0.005f);
+            }
             grabBc.enabled = true;
 
             //Grab
@@ -188,6 +189,11 @@ public class PlayerAttack : MonoBehaviour
                 Rigidbody grabbedRigidbody = null;
                 foreach (Collider grabHit in grabHits)
                 {
+                    if (grabHit.transform == transform || grabHit.transform.IsChildOf(transform))
+                    {
+                        continue;
+                    }
+
                     if (grabHit.attachedRigidbody != null)
                     {
                         heldObject = grabHit.gameObject;
@@ -195,8 +201,9 @@ public class PlayerAttack : MonoBehaviour
                         break;
                     }
                 }
-                if(heldObject != null && (heldObject.CompareTag("Fluid") || heldObject.CompareTag("Player") || heldObject.CompareTag("Floor"))) { //Banned tags
+                if(heldObject != null && FoundInBannedTags()) {
                     heldObject = null; 
+                    grabbedRigidbody = null;
                     Debug.Log("No grabbable object found");
                 }
                 if(heldObject != null) {
@@ -225,10 +232,7 @@ public class PlayerAttack : MonoBehaviour
                             enemyConstrained = true;
                             orignialParent = heldObject.transform.parent;
                             heldObject.transform.parent = null;
-                            projectile = heldObject.AddComponent<Projectile>();
-                            projectile.SetDamage(player.GetDamage());
                             foeRb.isKinematic = true;
-                            if(heldObject!=null) { PulseColorThrownOn(heldObject); }
                         }
                     }
                     else { Debug.Log("No rigidbody found"); }
@@ -236,14 +240,20 @@ public class PlayerAttack : MonoBehaviour
             }
 
             //Throw
-            else if(heldObject != null && foeRb!=null) {   
+            else if(holdingEnemy && heldObject != null && foeRb!=null) { 
+                projectile = heldObject.AddComponent<Projectile>();
+                projectile.SetDamage(player.GetDamage());
                 if(orignialParent!=null) { heldObject.transform.parent = orignialParent; }
                 enemyConstrained = false;
                 foeRb.isKinematic = false;
                 SetHeldCollisionIgnored(false);
-                foeRb.linearVelocity = player.rb.linearVelocity + player.transform.forward * throwForce;
+
+                Vector3 throwVector = player.rb.linearVelocity + player.transform.forward * throwForce;
+                if(IsPathBlocked(throwVector, 1f)) { throwVector *= 0.6f; }
+
+                foeRb.linearVelocity = throwVector;
                 foeRb.angularVelocity = Vector3.zero;
-                PulseColorThrownOff(heldObject);
+                if(heldObject!=null) { PulseColorThrownOn(heldObject); }
 
                 StartCoroutine(ResetComponents());
                 holdingEnemy = false;
@@ -256,7 +266,7 @@ public class PlayerAttack : MonoBehaviour
                 {
                     boxSize -= 0.1f;
                     grabBox.transform.localScale = new Vector3(boxSize, boxSize, boxSize);
-                    yield return new WaitForSeconds(0.01f / (punchCount*1.05f));
+                    yield return new WaitForSeconds(0.002f);
                 }
             grabBox.transform.localPosition = new Vector3(0f, 1.5f, 2f);
             grabMr.enabled = false;
@@ -273,6 +283,7 @@ public class PlayerAttack : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
             timeElapsed += 0.1f;
         }
+        yield return new WaitForSeconds(0.65f);
 
         if(enemyChase!=null) { 
             enemyChase.enabled = true; 
@@ -297,15 +308,25 @@ public class PlayerAttack : MonoBehaviour
     {
         if(heldCollider == null) { return false; }
 
-        bool boxHit = Physics.BoxCast(heldCollider.bounds.center, transform.localScale * 0.75f, Vector3.down, out RaycastHit objectHit, transform.rotation, 1.1f);
-        if (boxHit)
+        Bounds heldBounds = heldCollider.bounds;
+        RaycastHit[] groundHits = Physics.BoxCastAll(
+            heldBounds.center,
+            heldBounds.extents * 0.9f,
+            Vector3.down,
+            heldObject.transform.rotation,
+            0.2f,
+            ~0,
+            QueryTriggerInteraction.Ignore);
+
+        foreach (RaycastHit groundHit in groundHits)
         {
+            Transform hitTransform = groundHit.collider.transform;
+            if (hitTransform == transform || hitTransform.IsChildOf(transform)) { continue; }
+            if (heldObject != null && (hitTransform == heldObject.transform || hitTransform.IsChildOf(heldObject.transform))) { continue; }
             return true;
         }
-        else
-        {
-            return false;
-        }
+
+        return false;
     }
 
     private void Update()
@@ -365,18 +386,25 @@ public class PlayerAttack : MonoBehaviour
         if (direction.sqrMagnitude < 0.001f || checkDistance <= 0) {
             return false;
         }
-        
         direction = direction.normalized;
         
-        //SphereCast to check if path is blocked
         if (Physics.SphereCast(transform.position, 0.4f, direction, out RaycastHit hit, checkDistance, ~0, QueryTriggerInteraction.Ignore))
         {
-            //Only block if collision is far enough ahead (not micro-collisions)
-            return (hit.distance > 0.1f);
+            return hit.distance > 0.1f;
         }
-        
         return false;
     }
+
+    private bool FoundInBannedTags() {
+        foreach(string tag in bannedTags) {
+            if(heldObject.CompareTag(tag))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
 
 
