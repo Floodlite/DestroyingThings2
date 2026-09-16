@@ -27,11 +27,7 @@ public class GreatMeter : MonoBehaviour
         done=5,
     };
     [SerializeField] private MeterMode currentMeterMode = MeterMode.none;
-<<<<<<< Updated upstream
-    private SpawnWave waveSpawner;
-=======
     private WaveMachine waveSpawner;
->>>>>>> Stashed changes
     private int dangerIncrease = 2;
     [SerializeField] private float provokePercentage = 0f; //Controls how likely enemies are likely to switch from BASE to CHASE mode
 
@@ -40,13 +36,6 @@ public class GreatMeter : MonoBehaviour
     private int startReactivatedOrbs = 0;
     private int cycleOrbsToReactivate = 0;
 
-<<<<<<< Updated upstream
-    private void Awake()
-    {
-        scoreHandlerScripts = FindObjectsByType<PlayerScoreHandler>(FindObjectsSortMode.InstanceID);
-        waveSpawner = FindObjectsByType<SpawnWave>(FindObjectsSortMode.InstanceID)[0];
-        
-=======
     //TODO/NOTICE: I think the reason why the GREAT METER isn't working is because the other Awake functions responsible for instantiating the spawn points may be triggering AFTER this awake function and not BEFORE this one
     //As a result, this awake funciton is trying to find objects that don't exist yet
     //Maybe move to OnEnable? (https://docs.unity3d.com/560/Documentation/Manual/ExecutionOrder.html)
@@ -58,7 +47,6 @@ public class GreatMeter : MonoBehaviour
         waveSpawner = GetComponent<WaveMachine>();
         
         currentCycle = 0;
->>>>>>> Stashed changes
         multiplierMultiplier = 1f;
         timeElapsed = 0f;
         startReactivatedOrbs = 0;
@@ -69,11 +57,8 @@ public class GreatMeter : MonoBehaviour
         allOrbs.AddRange(GameObject.FindGameObjectsWithTag("Collect"));
         allOrbs.AddRange(GameObject.FindGameObjectsWithTag("Big Collect"));
         orbs = SetOrbDict();
-<<<<<<< Updated upstream
-=======
 
         Debug.Log("****** Meter configs set");
->>>>>>> Stashed changes
     }
 
     private void Start()
@@ -263,11 +248,7 @@ public class GreatMeter : MonoBehaviour
             }
         }
 
-<<<<<<< Updated upstream
-        waveSpawner.NextWave();
-=======
         if(currentCycle < maxCycles) { waveSpawner.NextWave(); }
->>>>>>> Stashed changes
         ReactivateOrbs();
         UpdatePlayerMeterMultipliers();
         AlterEnemies();
@@ -284,11 +265,7 @@ public class GreatMeter : MonoBehaviour
                 continue;
             }
 
-<<<<<<< Updated upstream
-            int randy = UnityEngine.Random.Range(1, 101);
-=======
             int randy = UnityEngine.Random.Range(1, 101); //Everyone say "hi" to Randy
->>>>>>> Stashed changes
             if(randy >= provokePercentage)
             {
                 enemy.SwitchRole(EnemyChase.EnemyRole.CHASE);

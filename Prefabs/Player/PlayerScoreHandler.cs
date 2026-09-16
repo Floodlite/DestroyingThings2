@@ -27,8 +27,13 @@ public class PlayerScoreHandler : MonoBehaviour
     private float enemyKillMultiplier = 1f;
 
     [SerializeField] RestraintMeter restraintMeterScript;
+    [SerializeField] HateMeter hateMeter;
 
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
     private void Awake()
     {
         restraintMeterScript = GetComponent<RestraintMeter>();
@@ -39,6 +44,7 @@ public class PlayerScoreHandler : MonoBehaviour
     {
         ResetPoints();
         ResetCounters();
+        hateMeter = FindObjectsByType<HateMeter>(FindObjectsSortMode.None)[0];
     }
 
     public void AddPoints(float pointsToAdd)
@@ -46,6 +52,8 @@ public class PlayerScoreHandler : MonoBehaviour
         points += pointsToAdd;
         overallPoints += pointsToAdd;
         restraintMeterScript.AddRestraint((int)(pointsToAdd/2));
+
+        if(hateMeter.IsActivated()) { hateMeter.AddTime(pointsToAdd); }
     }
 
     public void LosePoints(float pointsToLose)
@@ -105,6 +113,25 @@ public class PlayerScoreHandler : MonoBehaviour
             AddPoints(collectPoints * collectMultiplier);
         }
 
+<<<<<<< Updated upstream
+=======
+        if (other.CompareTag("Timed Collect"))
+        {
+            orbsCollected++;
+            orbsCollectedOverall++;
+            StartCoroutine(ReactivateOrb(other.gameObject, 10f));
+            AddPoints((collectPoints-1) * collectMultiplier);
+        }
+
+        if (other.CompareTag("Big Collect"))
+        {
+            orbsCollected++;
+            orbsCollectedOverall++;
+            Destroy(other.gameObject);
+            AddPoints(8f * collectPoints * collectMultiplier);
+        }
+
+>>>>>>> Stashed changes
         //Deliveries
         if (other.CompareTag("Target"))
         {
