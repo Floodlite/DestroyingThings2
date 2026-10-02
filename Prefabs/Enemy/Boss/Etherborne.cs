@@ -10,10 +10,10 @@ public class Etherborne : MonoBehaviour
         wait=1,
         warp=2, //Done
         changeMovement=3, //Done
-        foeLightning=4,
-        coreShock=5,
-        cableSlash=6, //Done
-        callBackup=7,
+        callBackup=4,
+        foeLightning=5,
+        coreShock=6, //Done
+        cableSlash=7, //Done
     }
 
     [SerializeField] private GameObject spark;
@@ -120,15 +120,19 @@ public class Etherborne : MonoBehaviour
                 //TODO: Manipulate EnemyChase agent status
                 break;
         }
+
+        if(enemyChase != null) { enemyChase.ToggleRole(); }
     }
 
     private void CreateNewAttackSequence(int length)
     {
         attackSequence.Clear();
         attackSequence.Add(BossAttacks.idle);
+        if(enemiesAlive.Count <= 5) { attackSequence.Add(BossAttacks.callBackup); }
+        
         for(int i=0; i<length; i++)
         {
-            int randy = UnityEngine.Random.Range(4, attackOptionCount);
+            int randy = UnityEngine.Random.Range(5, attackOptionCount);
             attackSequence.Add((BossAttacks)randy);
             attackSequence.Add(BossAttacks.wait);
             if(i>0 && i%2==0) { attackSequence.Add(BossAttacks.changeMovement); }
