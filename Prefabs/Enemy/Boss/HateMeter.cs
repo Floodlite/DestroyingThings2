@@ -18,9 +18,11 @@ public class HateMeter : MonoBehaviour
 
     private void FixedUpdate()
     {
-        RAW_Timer -= Time.deltaTime;
-        formattedTime = FormatTime(RAW_Timer);
-        if(RAW_Timer <= 0f) { EndOfDays(); }
+        if(activated) {
+            RAW_Timer -= Time.deltaTime;
+            formattedTime = FormatTime(RAW_Timer);
+            if(RAW_Timer <= 0f) { EndOfDays(); }
+        }
     }
 
 

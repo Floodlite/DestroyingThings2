@@ -11,4 +11,5 @@ public class EnemyConstructor : ScriptableObject
     public float dangerValue;
     public float pointsValue;
     public bool special;
+    public bool hateBound = false;
 }

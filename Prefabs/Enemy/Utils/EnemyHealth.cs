@@ -13,6 +13,9 @@ public class EnemyHealth : MonoBehaviour
     private SpawnWave waveSpawner;
     [SerializeField] private Player lastAttackedBy;
 
+    private HateMeter hateMeter;
+    private bool hateBound = false;
+
     private Reanimator reanimator;
     private readonly List<Behaviour> pausedBehaviours = new List<Behaviour>();
     private readonly List<NavMeshAgent> pausedAgents = new List<NavMeshAgent>();
@@ -82,12 +85,15 @@ public class EnemyHealth : MonoBehaviour
         {
             waveSpawner = waveSpawnerArray[0];
         }
+
+        hateMeter = FindObjectsOfType<HateMeter>(FindObjectsSortMode.None)[0];
     }
 
     private void Start()
     {
         if(constructors != null) {
             maxHealth = constructors.GetMaxHealth();
+            hateBound = constructors.IsHateBound();
         }
         else
         {
@@ -138,6 +144,10 @@ public class EnemyHealth : MonoBehaviour
         if (isDead)
         {
             return;
+        }
+
+        if(hateBound && hateMeter != null) {
+            hateMeter.ChangeActivated(false);
         }
 
         isDead = true;
