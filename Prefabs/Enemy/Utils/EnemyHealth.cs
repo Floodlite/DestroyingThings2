@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections;
 using System.Collections.Generic;
 
 public class EnemyHealth : MonoBehaviour
@@ -7,11 +8,14 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private ConstructorConjunction constructors;
     [SerializeField] private int maxHealth = 3;
     [SerializeField] private int health = 3;
+    [SerializeField] private bool iFrames = false;
+    private float iFramesUptime = 0.25f;
     [SerializeField] private Transform enemyRoot;
     [SerializeField] private bool isDead = false;
     public bool IsDead => isDead;
-    private SpawnWave waveSpawner;
+    private WaveMachine waveSpawner;
     [SerializeField] private Player lastAttackedBy;
+    [SerializeField] private bool invincible = false; //Different from iFrames
 
     private HateMeter hateMeter;
     private bool hateBound = false;
@@ -80,13 +84,24 @@ public class EnemyHealth : MonoBehaviour
         constructors = GetComponentInParent<ConstructorConjunction>();
         reanimator = GetComponentInParent<Reanimator>();
 
-        SpawnWave[] waveSpawnerArray = FindObjectsByType<SpawnWave>(FindObjectsSortMode.InstanceID);
+        WaveMachine[] waveSpawnerArray = FindObjectsByType<WaveMachine>(FindObjectsSortMode.InstanceID);
         if(waveSpawnerArray != null)
         {
             waveSpawner = waveSpawnerArray[0];
         }
 
+<<<<<<< Updated upstream
         hateMeter = FindObjectsOfType<HateMeter>(FindObjectsSortMode.None)[0];
+=======
+        /* TODO: Pulsing colors retain the renderers' original colors
+        foreach (SkinnedMeshRenderer renderer in enemyRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            renderer.material.EnableKeyword("_EMISSION"); //May cause unncecessary glowing
+            renderer.material.GetColor("_EmissionColor");
+            colorDict.Add(renderer, renderer.material.GetColor("_EmissionColor"));
+        }
+        */
+>>>>>>> Stashed changes
     }
 
     private void Start()
@@ -108,6 +123,7 @@ public class EnemyHealth : MonoBehaviour
 
         waveSpawner.AddToEnemiesAlive(this.transform.parent.gameObject);
     }
+
 
     public int RetrieveHP(bool returnHP)
     {
@@ -141,10 +157,7 @@ public class EnemyHealth : MonoBehaviour
 
     private void Death()
     {
-        if (isDead)
-        {
-            return;
-        }
+        Debug.Log("Dead: " + this.gameObject.transform.parent.gameObject.name);
 
         if(hateBound && hateMeter != null) {
             hateMeter.ChangeActivated(false);
@@ -152,6 +165,20 @@ public class EnemyHealth : MonoBehaviour
 
         isDead = true;
         health = 0;
+
+        if (isDead)
+        {
+            if(reanimator != null) {
+                StopMovement();
+                MakeIntangible();
+                StopEnemyBehaviours();
+                if(waveSpawner != null) {
+                    waveSpawner.RemoveFromEnemiesAlive(this.transform.parent.gameObject);
+                }
+                this.transform.parent.gameObject.SetActive(false); //Failsafe if the enemy just won't die for some reason
+            }
+            return;
+        }
 
         if (reanimator != null)
         {
@@ -163,9 +190,16 @@ public class EnemyHealth : MonoBehaviour
         {
             PlayerScoreHandler playerScoreScript = lastAttackedBy.gameObject.GetComponentInChildren<PlayerScoreHandler>();
             if(playerScoreScript != null) {
+
                 float pointsScored = constructors.GetPoints() * playerScoreScript.GetKillMultiplier();
-                playerScoreScript.AddPoints(pointsScored);
-                playerScoreScript.AddToEnemiesKilled();
+                if(reanimator != null && reanimator.GetResStatus()) { 
+                    playerScoreScript.AddPoints(pointsScored/4); 
+                }
+                else { 
+                    playerScoreScript.AddPoints(pointsScored); 
+                    playerScoreScript.AddToEnemiesKilled();
+                }
+
                 Debug.Log(lastAttackedBy + ": +" + pointsScored + " points scored");
 
                 RestraintMeter restraintMeterScript = lastAttackedBy.gameObject.GetComponentInChildren<RestraintMeter>();
@@ -306,7 +340,7 @@ public class EnemyHealth : MonoBehaviour
     public void Resurrect()
     {
         Debug.Log("Resurrected: " + gameObject.name);
-        if (!isDead)
+        if (!isDead || !constructors.IsRevivable())
         {
             return;
         }
@@ -314,6 +348,7 @@ public class EnemyHealth : MonoBehaviour
         if (reanimator != null)
         {
             reanimator.SetDeathStatus(false);
+            reanimator.SetResStatus(true);
         }
 
         RestoreRigidbodies();
@@ -427,18 +462,14 @@ public class EnemyHealth : MonoBehaviour
     //Makes this enemy lose health when getting punched
     private void OnTriggerEnter(Collider other)
     {
-        if (isDead)
-        {
-            return;
-        }
+        if(isDead || iFrames || invincible) { return; }
 
         Player player = other.GetComponentInParent<Player>();
 
         if (!other.CompareTag("Punch") && !other.CompareTag("Ranged"))
         {
             return;
-        }
-
+        } 
         if (player != null)
         {
             if (other.CompareTag("Punch"))  {
@@ -452,5 +483,40 @@ public class EnemyHealth : MonoBehaviour
         {
             LoseHP(1);
         }
+        StartCoroutine(IFrames());
+    }
+
+    private IEnumerator IFrames()
+    {
+        iFrames = true;
+        PulseColorOn();
+        yield return new WaitForSeconds(iFramesUptime);
+        iFrames = false;
+        PulseColorOff();
+    }
+
+
+    private Dictionary<SkinnedMeshRenderer, Color> colorDict = new Dictionary<SkinnedMeshRenderer, Color>();
+    private void PulseColorOn()
+    {
+        foreach (SkinnedMeshRenderer renderer in enemyRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            renderer.material.EnableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", Color.white);
+        }
+    }
+
+    private void PulseColorOff()
+    {
+        foreach (SkinnedMeshRenderer renderer in enemyRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            renderer.material.DisableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", Color.black);
+        }
+    }
+
+    public void SetInvincibility(bool newStatus)
+    {
+        invincible = newStatus;
     }
 }

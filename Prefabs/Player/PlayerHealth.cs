@@ -67,6 +67,17 @@ public class PlayerHealth : MonoBehaviour
         Destroy(gameObject);
     }
 
+    private void Ressurect()
+    {
+        //TODO
+    }
+
+    public void PermaDeath()
+    {
+        Debug.Log("...And the world kept changing");
+        Destroy(gameObject);
+    }
+
     private IEnumerator IFrames()
     {
         iFrames = true;
