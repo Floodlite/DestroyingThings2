@@ -5,10 +5,6 @@ using System.Collections;
 public class UpdateNavMesh : MonoBehaviour {
 
     public NavMeshSurface[] surfaces;
-<<<<<<< Updated upstream
-    public NavMeshSurface surface;
-=======
->>>>>>> Stashed changes
     [SerializeField] private bool on = true;
     [SerializeField] private bool asyncMode = true;
 

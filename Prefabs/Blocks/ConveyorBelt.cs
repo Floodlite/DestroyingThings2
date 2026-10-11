@@ -5,6 +5,7 @@ public class ConveyorBelt : MonoBehaviour
     //[SerializeField] GameObject conveyorBox; Attach to a gameObject with a box
     [Range(25f, 2000f)]
     [SerializeField] private float pushForce = 10f;
+    [SerializeField] private float orbPushDivisor = 5f;
 
     private void OnTriggerStay(Collider other)
     {
@@ -13,7 +14,15 @@ public class ConveyorBelt : MonoBehaviour
         if(rb==null) { rb = other.gameObject.GetComponentInChildren<Rigidbody>(); }
         if(rb==null) { return; }
 
-        rb.AddForce(transform.forward*pushForce, ForceMode.Acceleration);
+        if(other.CompareTag("Collect"))
+        {
+            rb.AddForce(transform.forward*pushForce/orbPushDivisor, ForceMode.Acceleration);
+        }
+        else
+        {
+            rb.AddForce(transform.forward*pushForce, ForceMode.Acceleration);
+        }
+        
     }
 
 
