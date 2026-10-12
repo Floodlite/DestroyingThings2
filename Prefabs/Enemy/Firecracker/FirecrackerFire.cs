@@ -9,6 +9,7 @@ public class FirecrackerFire : MonoBehaviour
     [SerializeField] private float projectileSpeed;
     [SerializeField] private EnemyConstructor enemy;
     [SerializeField] private GameObject projectile = null;
+    [SerializeField] private GameObject[] projectileArray = null;
     [SerializeField] private Vector3 playerLocation;
     [SerializeField] private GameObject player;
     [SerializeField] private ObjectPool<GameObject> pool;
@@ -19,12 +20,14 @@ public class FirecrackerFire : MonoBehaviour
     [SerializeField] private Player[] players;
     private Coroutine attackRoutine;
     [SerializeField] private ConstructorConjunction constructors;
+    private int attackIndex = 0;
 
     private void Start()
     {
         attackFreq = constructors.GetAttackFreq();
         projectileSpeed = constructors.GetProjectileSpeed();
         projectile = constructors.GetProjectile();
+        projectileArray = constructors.GetProjectileCycle();
         minPlayerDistance = constructors.GetMinDistance();
         maxPlayerDistance = constructors.GetMaxDistance();
         StartAttackRoutine();
@@ -177,11 +180,15 @@ public class FirecrackerFire : MonoBehaviour
             return;
         }
 
-        GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 1f), Quaternion.identity, Pooler.PoolType.traps);
+        if(projectileArray != null) { GameObject ball = Pooler.SpawnObject(projectileArray[spawnIndex], transform.position + new Vector3(0f, 1f, 1f), Quaternion.identity, Pooler.PoolType.traps); }
+        else { GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 1f), Quaternion.identity, Pooler.PoolType.traps); }
         BezierCurve curve = ConstructCurve(transform.position + new Vector3(0f, 1f, 1f), closestPlayer.transform.position);
         Rigidbody ballRb = ball.GetComponent<Rigidbody>();
         ballRb.isKinematic = true;
         StartCoroutine(ThrowProjectile(ball, curve, airTime));
         //Debug.Log("Blam");
+
+        spawnIndex++;
+        if(projectileArray != null && spawnIndex >= projectileArray.Count) { spawnIndex = 0; }
     }
 }

@@ -88,6 +88,11 @@ public class ConstructorConjunction : MonoBehaviour
         return rangedEnemy.projectile;
     }
 
+    public GameObject GetProjectileCycle() {
+        if(rangedEnemy == null) { return null; }
+        return rangedEnemy.projectileArray;
+    }
+
     public Rigidbody GetProjectileRb()
     {
         if(rangedEnemy == null) { return null; }

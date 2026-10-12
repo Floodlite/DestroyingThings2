@@ -11,4 +11,5 @@ public class RangedEnemyConstructor : ScriptableObject
     public float projectileSpeed;
     public float projectileLifespan;
     public GameObject projectile;
+    public GameObject[] projectileArray;
 }
