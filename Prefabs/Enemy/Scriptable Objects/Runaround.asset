@@ -17,7 +17,14 @@ MonoBehaviour:
   enemyDamage: 3
   enemySpeed: 30
   enemyHealth: 4
+<<<<<<< Updated upstream
   dangerValue: 2.5
   pointsValue: 8
   grabbable: 1
+=======
+  dangerValue: 3
+  pointsValue: 8
+  grabbable: 1
+  revivable: 1
+>>>>>>> Stashed changes
   special: 0

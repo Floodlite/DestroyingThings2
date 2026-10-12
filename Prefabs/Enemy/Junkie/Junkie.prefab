@@ -117,6 +117,10 @@ GameObject:
   - component: {fileID: 5699729645214137506}
   - component: {fileID: 7063068465831826017}
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+  - component: {fileID: 3697757015793989896}
+>>>>>>> Stashed changes
 =======
   - component: {fileID: 3697757015793989896}
 >>>>>>> Stashed changes
@@ -363,6 +367,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Invincibility
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   enemyHealth: {fileID: 0}
   invincibilityDuration: 50
   shield: {fileID: 6392794255539555260}
@@ -372,6 +377,12 @@ MonoBehaviour:
   invincibilityDuration: 50
   shield: {fileID: 6392794255539555260}
   shieldRenderer: {fileID: 3259852893236692106}
+=======
+  enemyHealth: {fileID: 4147209354745060505}
+  invincibilityDuration: 50
+  shield: {fileID: 6392794255539555260}
+  shieldRenderer: {fileID: 3259852893236692106}
+>>>>>>> Stashed changes
 --- !u!114 &3697757015793989896
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -397,6 +408,9 @@ MonoBehaviour:
   constructors: {fileID: 7391954311550419112}
   enemyRole: 1
   chaseMode: 2
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 --- !u!1 &1523747651372594993
 GameObject:
@@ -1251,6 +1265,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7725331178285408549}
+  - component: {fileID: 7595829769847356560}
   m_Layer: 0
   m_Name: Junkie
   m_TagString: Enemy
@@ -1274,6 +1289,20 @@ Transform:
   - {fileID: 1954712663802701831}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7595829769847356560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8208314015495545342}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09fb8516614bd4f40a43319e45dff4d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Reanimator
+  dead: 0
+  resurrected: 0
 --- !u!1 &8506583464581394288
 GameObject:
   m_ObjectHideFlags: 0

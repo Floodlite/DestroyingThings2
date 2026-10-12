@@ -10,15 +10,22 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private int health = 3;
     [SerializeField] private bool iFrames = false;
     private float iFramesUptime = 0.25f;
+<<<<<<< Updated upstream
+=======
+    private float healthLossMultiplier = 1f;
+>>>>>>> Stashed changes
     [SerializeField] private Transform enemyRoot;
     [SerializeField] private bool isDead = false;
     public bool IsDead => isDead;
     private WaveMachine waveSpawner;
     [SerializeField] private Player lastAttackedBy;
     [SerializeField] private bool invincible = false; //Different from iFrames
+<<<<<<< Updated upstream
 
     private HateMeter hateMeter;
     private bool hateBound = false;
+=======
+>>>>>>> Stashed changes
 
     private Reanimator reanimator;
     private readonly List<Behaviour> pausedBehaviours = new List<Behaviour>();
@@ -91,8 +98,11 @@ public class EnemyHealth : MonoBehaviour
         }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         hateMeter = FindObjectsOfType<HateMeter>(FindObjectsSortMode.None)[0];
 =======
+=======
+>>>>>>> Stashed changes
         /* TODO: Pulsing colors retain the renderers' original colors
         foreach (SkinnedMeshRenderer renderer in enemyRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true))
         {
@@ -101,6 +111,9 @@ public class EnemyHealth : MonoBehaviour
             colorDict.Add(renderer, renderer.material.GetColor("_EmissionColor"));
         }
         */
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     }
 
@@ -147,7 +160,7 @@ public class EnemyHealth : MonoBehaviour
             return;
         }
 
-        health -= healthLoss;
+        health -= (int) (healthLoss * healthLossMultiplier);
         Debug.Log("Enemy " + this.name + " " + health);
         if (health <= 0)
         {
@@ -158,10 +171,13 @@ public class EnemyHealth : MonoBehaviour
     private void Death()
     {
         Debug.Log("Dead: " + this.gameObject.transform.parent.gameObject.name);
+<<<<<<< Updated upstream
 
         if(hateBound && hateMeter != null) {
             hateMeter.ChangeActivated(false);
         }
+=======
+>>>>>>> Stashed changes
 
         isDead = true;
         health = 0;
@@ -518,5 +534,13 @@ public class EnemyHealth : MonoBehaviour
     public void SetInvincibility(bool newStatus)
     {
         invincible = newStatus;
+<<<<<<< Updated upstream
+=======
+    }
+
+    public void SetHealthLossMultiplier(float newMultiplier)
+    {
+        healthLossMultiplier = newMultiplier;
+>>>>>>> Stashed changes
     }
 }

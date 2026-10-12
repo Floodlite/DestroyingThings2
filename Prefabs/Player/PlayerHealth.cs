@@ -7,6 +7,10 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private int health = 8;
     [SerializeField] private bool iFrames = false;
     private float iFramesUptime = 0.2f;
+<<<<<<< Updated upstream
+=======
+    private float healthLossMultiplier = 1f;
+>>>>>>> Stashed changes
     [SerializeField] private PlayerScoreHandler scoreHandler;
     [SerializeField] private RestraintMeter restraintMeterScript;
 
@@ -33,7 +37,11 @@ public class PlayerHealth : MonoBehaviour
     public void LoseHP(int healthLoss)
     {
         if(iFrames) { return; }
+<<<<<<< Updated upstream
         health -= healthLoss;
+=======
+        health -= (int) (healthLoss * healthLossMultiplier);
+>>>>>>> Stashed changes
         Debug.Log("Player " + health);
         if (health <= 0)
         {
@@ -67,7 +75,11 @@ public class PlayerHealth : MonoBehaviour
         Destroy(gameObject);
     }
 
+<<<<<<< Updated upstream
     private void Ressurect()
+=======
+    private void Resurrect()
+>>>>>>> Stashed changes
     {
         //TODO
     }
@@ -104,4 +116,12 @@ public class PlayerHealth : MonoBehaviour
             renderer.material.SetColor("_EmissionColor", Color.black);
         }
     }
+<<<<<<< Updated upstream
+=======
+
+    public void SetHealthLossMultiplier(float newMultiplier)
+    {
+        healthLossMultiplier = newMultiplier;
+    }
+>>>>>>> Stashed changes
 }

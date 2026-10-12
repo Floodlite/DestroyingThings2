@@ -19,6 +19,10 @@ GameObject:
   - component: {fileID: 6907132320476513933}
   - component: {fileID: 349096187448609075}
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+  - component: {fileID: 2502116780138899355}
+>>>>>>> Stashed changes
 =======
   - component: {fileID: 2502116780138899355}
 >>>>>>> Stashed changes
@@ -255,7 +259,10 @@ NavMeshAgent:
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 --- !u!114 &2502116780138899355
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -281,6 +288,9 @@ MonoBehaviour:
   constructors: {fileID: 6671051102247410918}
   enemyRole: 1
   chaseMode: 1
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 --- !u!1 &8398087322588901358
 GameObject:

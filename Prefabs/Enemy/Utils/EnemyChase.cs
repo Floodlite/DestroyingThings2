@@ -32,6 +32,10 @@ public class EnemyChase : MonoBehaviour
         pursue=0,
         retreat=1,
         res=2,
+<<<<<<< Updated upstream
+=======
+        //paused=3,
+>>>>>>> Stashed changes
     }
     [SerializeField] private ChaseMode chaseMode = ChaseMode.pursue;
     
@@ -85,6 +89,25 @@ public class EnemyChase : MonoBehaviour
         } 
     }
 
+<<<<<<< Updated upstream
+=======
+    public void ToggleRole()
+    {
+        switch(enemyRole)
+        {
+            case EnemyRole.CHASE:
+                SwitchRole(EnemyRole.BASE);
+                break;
+            case EnemyRole.BASE:
+                SwitchRole(EnemyRole.CHASE);
+                break;
+            default:
+                SwitchRole(EnemyRole.CHASE);
+                break;
+        } 
+    }
+
+>>>>>>> Stashed changes
     public EnemyRole GetEnemyRole()
     {
         return enemyRole;

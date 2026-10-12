@@ -216,7 +216,10 @@ MonoBehaviour:
   lastAttackedBy: {fileID: 0}
   invincible: 0
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 --- !u!114 &2484933203068762269
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -269,6 +272,9 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 --- !u!1 &249093869565482315
 GameObject:

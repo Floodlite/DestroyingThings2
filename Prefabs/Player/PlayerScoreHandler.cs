@@ -30,6 +30,9 @@ public class PlayerScoreHandler : MonoBehaviour
     private float meterMultiplierKill = 1f;
 
     [SerializeField] RestraintMeter restraintMeterScript;
+    [SerializeField] HateMeter hateMeter;
+    private float hateTimeMultiplier = 0.5f;
+
 
 
 <<<<<<< Updated upstream
@@ -46,6 +49,7 @@ public class PlayerScoreHandler : MonoBehaviour
     {
         ResetPoints();
         ResetCounters();
+        hateMeter = FindObjectsByType<HateMeter>(FindObjectsSortMode.None)[0];
     }
 
     public void AddPoints(float pointsToAdd)
@@ -54,6 +58,8 @@ public class PlayerScoreHandler : MonoBehaviour
         points += pointsToAdd;
         overallPoints += pointsToAdd;
         restraintMeterScript.AddRestraint((int)(pointsToAdd/2));
+
+        if(hateMeter != null && hateMeter.IsActivated()) { hateMeter.AddTime(pointsToAdd * hateTimeMultiplier); }
     }
 
     public void LosePoints(float pointsToLose)
@@ -124,7 +130,10 @@ public class PlayerScoreHandler : MonoBehaviour
         }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
         if (other.CompareTag("Timed Collect"))
         {
             orbsCollected++;
@@ -133,6 +142,9 @@ public class PlayerScoreHandler : MonoBehaviour
             AddPoints((collectPoints-1) * collectMultiplier);
         }
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
         if (other.CompareTag("Big Collect"))
         {
@@ -140,7 +152,11 @@ public class PlayerScoreHandler : MonoBehaviour
             orbsCollectedOverall++;
             Destroy(other.gameObject);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             AddPoints(4f * collectPoints * collectMultiplier);
+=======
+            AddPoints(8f * collectPoints * collectMultiplier);
+>>>>>>> Stashed changes
 =======
             AddPoints(8f * collectPoints * collectMultiplier);
 >>>>>>> Stashed changes

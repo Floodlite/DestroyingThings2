@@ -11,18 +11,28 @@ public class HateMeter : MonoBehaviour
     [SerializeField] private PlayerHealth[] players;
 
 
+<<<<<<< Updated upstream
     private void Start()
+=======
+    private void Awake()
+>>>>>>> Stashed changes
     {
         players = FindObjectsByType<PlayerHealth>(FindObjectsInactive.Include, FindObjectsSortMode.None);
     }
 
     private void FixedUpdate()
     {
+<<<<<<< Updated upstream
         if(activated) {
             RAW_Timer -= Time.deltaTime;
             formattedTime = FormatTime(RAW_Timer);
             if(RAW_Timer <= 0f) { EndOfDays(); }
         }
+=======
+        RAW_Timer -= Time.deltaTime;
+        formattedTime = FormatTime(RAW_Timer);
+        if(RAW_Timer <= 0f) { EndOfDays(); }
+>>>>>>> Stashed changes
     }
 
 
