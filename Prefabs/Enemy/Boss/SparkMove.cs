@@ -2,57 +2,49 @@ using UnityEngine;
 
 public class SparkMove : MonoBehaviour
 {
-<<<<<<< Updated upstream
-    private Player[] players;
-    [SerializeField] private float travelSpeed;
-    private float distanceToPlayer;
-    private float waitTime;
-
-
-    private Player FindClosestPlayer()
-    {
-        players = FindObjectsByType<Player>(FindObjectsSortMode.InstanceID);
-        if (players == null || players.Length == 0)
-=======
     [SerializeField] private GameObject boundEnemy;
     [SerializeField] private float timeElapsed = 0f;
     [SerializeField] private float waitTime = 3f;
-    [SerializeField] private float travelSpeed = 7f;
-    [SerializeField] private bool bondedToEnemy = false;
+    [SerializeField] private float moveSpeed = 7f;
+    [SerializeField] private bool boundToEnemy = false;
     [SerializeField] private Vector3 enemyLocation;
     private Reanimator[] enemies;
     private float distanceToEnemy;
 
-
-    private void LateUpdate()
+    private void FixedUpdate()
     {
         if(boundEnemy != null)
         {
             enemyLocation = boundEnemy.transform.position;
         }
 
-        if(bondedToEnemy) {
+        if(boundToEnemy) {
             this.transform.position = boundEnemy.gameObject.transform.position;
         }
         timeElapsed += Time.deltaTime;
         if(timeElapsed > 0f && timeElapsed % waitTime == 0f) //Move to new enemy
         {
-            bondedToEnemy = false;
-            boundEnemy = FindClosestEnemy().transform.parent.gameObject;
+            boundToEnemy = false;
+            //boundEnemy = FindClosestEnemy().transform.parent.gameObject;
+            boundEnemy = ChooseRandomEnemy().transform.parent.gameObject;
+
             //Physically move to new enemy
+            MoveToEnemy();
         }
     }
 
     private void MoveToEnemy()
     {
-        
+        while(Mathf.Abs(transform.position.sqrMagnitude - boundEnemy.transform.position.sqrMagnitude) >= 2f)
+        {
+            this.transform.Translate(transform.position-boundEnemy.transform.position * moveSpeed);
+        }
     }
 
     private Reanimator FindClosestEnemy()
     {
         enemies = FindObjectsByType<Reanimator>(FindObjectsSortMode.InstanceID);
         if (enemies == null || enemies.Length == 0)
->>>>>>> Stashed changes
         {
             return null;
         }
@@ -60,19 +52,6 @@ public class SparkMove : MonoBehaviour
         float closestDistance = 99999;
         int indexOfClosest = 0;
 
-<<<<<<< Updated upstream
-        for(int i=0; i<players.Length; i++)
-        {
-            distanceToPlayer = Vector3.Distance(transform.position, players[i].transform.position);
-            
-            if(distanceToPlayer < closestDistance)
-            {
-                closestDistance = distanceToPlayer;
-                indexOfClosest = i;
-            }
-        }
-        return players[indexOfClosest];
-=======
         for(int i=0; i<enemies.Length; i++)
         {
             if(enemies[i].IsDead())
@@ -89,7 +68,21 @@ public class SparkMove : MonoBehaviour
             }
         }
         return enemies[indexOfClosest];
->>>>>>> Stashed changes
+    }
+
+    private Reanimator ChooseRandomEnemy()
+    {
+        int randy;
+        int maxAttempts = enemies.Length * 4;
+        for(int i=0; i<maxAttempts; i++) {
+            randy = UnityEngine.Random.Range(0, enemies.Length);
+            if(enemies[randy].GetComponent<SparkMark>() == null)
+            {
+                enemies[randy].transform.gameObject.AddComponent<SparkMark>(); 
+                return enemies[randy];
+            }
+        }
+        return null;
     }
 
 
