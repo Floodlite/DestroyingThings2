@@ -69,7 +69,6 @@ public class Etherborne : MonoBehaviour
     private int lightningDamage = 6;
     private EnemyHealth enemyHealth;
 
-    [SerializeField] private LineRenderer lineRenderer;
     [SerializeField] private SplineContainer splineContainer;
     [SerializeField] private Gradient lightningWarmupColor; //Transluscent blue
     [SerializeField] private Gradient lightningActiveColor; //Neon cyan
@@ -81,7 +80,6 @@ public class Etherborne : MonoBehaviour
         constructors = GetComponent<ConstructorConjunction>();
         enemyChase = GetComponent<EnemyChase>();
         enemyHealth = GetComponent<EnemyHealth>();
-        lineRenderer = GetComponent<LineRenderer>();
         splineContainer = GetComponent<SplineContainer>();
         attackOptionCount = Enum.GetNames(typeof(BossAttacks)).Length;
         chaseModeCount = Enum.GetNames(typeof(ChaseMode)).Length;
@@ -100,7 +98,8 @@ public class Etherborne : MonoBehaviour
         if(!attackInProgress) {
             timeElapsed += Time.deltaTime;
         }
-        else if(!attackInProgress && timeElapsed >= cooldownTime)
+
+        if(!attackInProgress && timeElapsed >= cooldownTime)
         {
             FindEnemiesAlive();
 
@@ -117,13 +116,12 @@ public class Etherborne : MonoBehaviour
                 CreateNewAttackSequence(sequenceLength);
                 cyclesElapsed++;
             }
-        }
+    
 
-        if(attackInProgress)
-        {
+
             switch(currentAttack)
             {
-                //TODO: Use dictionary for attack duartions, maybe
+                //TODO: Use dictionary for attack durations, maybe
                 case BossAttacks.idle:
                     StartCoroutine(DoNothing(7f));
                     attackDurationMultiplier += 0.1f;
@@ -135,7 +133,7 @@ public class Etherborne : MonoBehaviour
                     PickRandomChaseMode();
                     break;
                 case BossAttacks.cableSlash:
-                    SlashWindup(1f, 2.5f, 15f, 5f*attackDurationMultiplier);
+                    StartCoroutine(SlashWindup(1f, 2.5f, 15f, 5f*attackDurationMultiplier));
                     break;
                 case BossAttacks.coreShock:
                     StartCoroutine(CoreShock(sphere.transform.localScale.x, Mathf.Clamp(5f-0.15f*attackDurationMultiplier, 0.5f, 10f), 3f, 3f));
@@ -184,6 +182,31 @@ public class Etherborne : MonoBehaviour
                 break;
         }
 
+        StartCoroutine(DoNothing(Mathf.Clamp(2f-0.1f*attackDurationMultiplier, 0.15f, 7.5f)));
+    }
+
+    private void SetChaseMode(ChaseMode newChaseMode)
+    {
+        chaseMode = newChaseMode;
+
+        if(chaseMode == ChaseMode.idle)
+        {
+            enemyChase.SetSpeed(originalSpeed); //Reset speed back to normal
+        }
+        
+        switch(newChaseMode) {
+            case ChaseMode.idle:
+                enemyChase.SetSpeed(originalSpeed/15f);
+                enemyChase.SetChaseMode(EnemyChase.ChaseMode.pursue);
+                break;
+            case ChaseMode.pursue:
+                enemyChase.SetChaseMode(EnemyChase.ChaseMode.pursue);
+                break;
+            case ChaseMode.retreat:
+                enemyChase.SetChaseMode(EnemyChase.ChaseMode.retreat);
+                break;
+        }
+
         if(enemyChase != null) { enemyChase.ToggleRole(); }
     }
 
@@ -194,7 +217,7 @@ public class Etherborne : MonoBehaviour
     {
         attackSequence.Clear();
         attackSequence.Add(BossAttacks.idle);
-        if(enemiesAlive.Count <= 5) { attackSequence.Add(BossAttacks.callBackup); }
+        if(enemiesAlive.Count <= 6) { attackSequence.Add(BossAttacks.callBackup); }
         
         for(int i=0; i<length; i++)
         {
@@ -222,6 +245,7 @@ public class Etherborne : MonoBehaviour
     ///</summary>
     private IEnumerator LightningWindup(float windupTime, float attackDuration, float waitTime)
     {
+        SetChaseMode(ChaseMode.idle);
         yield return new WaitForSeconds(windupTime/4f);
         StartCoroutine(FoeLightning(windupTime, attackDuration, waitTime));
     }
@@ -234,22 +258,24 @@ public class Etherborne : MonoBehaviour
         * Create a knot for each enemy alive via FindObjectsOfType<EnemyHealth>(FindObjectsSortMode.InstanceID)
         * Set the knots' positions to their corresponding enemy
         * Have damaging projectiles move at very high speeds along the spline
-
-        * Easier option: Create a bunch of small two-point splines or bezier curves going from the boss to each enemy
         */
         int knotCapacity = enemiesAlive.Count+2; //First and last will be the boss
 
+
         //Line renderer configs
-        //May cause performance drops
-        lineRenderer.startWidth = 0.1f; //TODO
-        lineRenderer.endWidth = 0.1f; //TODO
+        //May cause hefty performance drops
+        LineRenderer lineRenderer = this.gameObject.AddComponent<LineRenderer>();
+        lineRenderer.startWidth = 0.6f;
+        lineRenderer.endWidth = 0.6f;
         lineRenderer.colorGradient = lightningWarmupColor;
         lineRenderer.positionCount = knotCapacity;
+        lineRenderer.material = new Material(Shader.Find("Sprites/Default")); //Placeholder
 
         Spline spline = new Spline(knotCapacity, false);
-        spline.Add(this.transform.position);
+        spline.Add(this.transform.position); //First knot
+        lineRenderer.SetPosition(0, this.transform.position);
 
-        int knotIndex = 0;
+        int knotIndex = 1; //Should be 1
         foreach(Reanimator enemy in enemiesAlive)
         {
             if(enemy == null) { continue; }
@@ -267,18 +293,48 @@ public class Etherborne : MonoBehaviour
             SplineUtility.RemoveSpline(splineContainer, currentSpline);
         }
 
-        spline.Add(this.transform.position);
-        SplineUtility.AddSpline(splineContainer, spline);
+        spline.Add(this.transform.position); //Last knot
+        lineRenderer.SetPosition(knotIndex, this.transform.position);
 
+        SplineUtility.AddSpline(splineContainer, spline);
         
         yield return new WaitForSeconds(armTime);
-        StartCoroutine(ChainLightning(attackDuration, waitTime));
+        StartCoroutine(ChainLightning(splineContainer, spline, knotCapacity, attackDuration, waitTime, lineRenderer));
     }
 
-    private IEnumerator ChainLightning(float attackDuration, float waitTime)
+    private IEnumerator ChainLightning(SplineContainer splineContainer, Spline spline, int knotCount, float attackDuration, float waitTime, LineRenderer lineRenderer)
     {
-        //Spawn projectiles that move along the spline (MoveAlongSpline.cs)
+        List<GameObject> electrons = new List<GameObject>();
 
+        //Spawn several high-speed projectiles that move along the spline
+        for(int i=0; i<knotCount; i++)
+        {
+            float3 knotPosition = spline[i].Position;
+            GameObject ball = Pooler.SpawnObject(lightningSpark, knotPosition, Quaternion.identity, Pooler.PoolType.bullets);
+            HurtBox hurtBox = ball.GetComponentInChildren<HurtBox>();
+            hurtBox.SetDamage(lightningDamage);
+            hurtBox.SetHealthScript(enemyHealth);
+
+            MoveAlongSpline splineMove = ball.GetComponentInChildren<MoveAlongSpline>();
+            splineMove.ChangeSpline(splineContainer);
+
+            electrons.Add(ball);
+            yield return new WaitForSeconds(0.01f);
+        }
+
+        lineRenderer.colorGradient = lightningActiveColor;
+        lineRenderer.startWidth = 1f;
+        lineRenderer.endWidth = 1f;
+
+
+        yield return new WaitForSeconds(attackDuration);
+
+        StartCoroutine(TerminateSparks(electrons, 0f));
+        if(lineRenderer != null)
+        {
+            Destroy(lineRenderer);
+        }
+        splineContainer.Spline = null;
 
         yield return new WaitForSeconds(waitTime);
         SetAttackStatus(false);
@@ -299,6 +355,7 @@ public class Etherborne : MonoBehaviour
         Player closestPlayer = FindClosestPlayer();
         if (closestPlayer == null)
         {
+            SetAttackStatus(false);
             return;
         }
 
@@ -313,11 +370,15 @@ public class Etherborne : MonoBehaviour
             hurtBox.SetHealthScript(enemyHealth);
         }
         
+        //Notice: If projectiles are traveling absurdly fast, then normalize the player direction before multiplying
         Rigidbody ballRb = ball.GetComponent<Rigidbody>();
         ballRb.linearVelocity = directionToPlayer * projectileSpeed;
 
+        /*
         ProjectileExpiration projectileExpiration = ball.GetComponentInChildren<ProjectileExpiration>();
+        projectileExpiration.SetProjectileLifespan(slashDuration+5);
         projectileExpiration.StartSelfDestruct();
+        */
     
         slashIndex++;
         if(slashIndex >= slash.Length) { slashIndex = 0; }
@@ -333,11 +394,11 @@ public class Etherborne : MonoBehaviour
         {
             //Projectiles get larger and fly faster as they move
             rb.linearVelocity = directionToPlayer * projectileSpeed * scaleSpeedMultiplier;
-            rb.transform.parent.gameObject.transform.localScale *= scaleSpeedMultiplier;
+            projectile.transform.localScale *= scaleSpeedMultiplier;
             yield return new WaitForSeconds(timeInterval);
             timeElapsed += timeInterval;
             scaleSpeedMultiplier += 0.15f;
-        }   
+        }
 
         Pooler.ReleaseObjectToPool(projectile);
         yield return new WaitForSeconds(waitTime);
@@ -410,7 +471,7 @@ public class Etherborne : MonoBehaviour
 
         foreach (Collider collider in sphere.GetComponentsInChildren<Collider>(true))
         {
-            if(!collider.enabled) { collider.enabled = status; }
+            if(collider.enabled != status) { collider.enabled = status; }
         }
     }
 
@@ -424,7 +485,10 @@ public class Etherborne : MonoBehaviour
     ///</summary>
     private void WarpElsewhere()
     {
-        if(warpPoints.Length <= 0) { return; }
+        if(warpPoints.Length <= 0) { 
+            SetAttackStatus(false);
+            return; 
+        }
         int randy = UnityEngine.Random.Range(0, warpPoints.Length);
         this.transform.parent.transform.position = warpPoints[randy].transform.position;
         if(enemyChase != null) { enemyChase.WarpToNavMesh(); }
@@ -438,38 +502,37 @@ public class Etherborne : MonoBehaviour
     {
         for(int i=0; i<spawnCount; i++)
         {
-            //Notice: This does not take the current danger level into account
             int randy = UnityEngine.Random.Range(0, summonsPool.GetLength());
             GameObject chosenEnemy = summonsPool.GetPool()[randy];
 
             Vector3 spawnOffset;
             switch(i) {
                 case 0:
-                    spawnOffset = this.transform.position + new Vector3(7f, 0f, 0f); //E
+                    spawnOffset = new Vector3(7f, 0f, 0f); //E
                     break;  
                 case 1:
-                    spawnOffset = this.transform.position + new Vector3(-7f, 0f, 0f); //W
+                    spawnOffset = new Vector3(-7f, 0f, 0f); //W
                     break;
                 case 2:
-                    spawnOffset = this.transform.position + new Vector3(0f, 0f, 7f); //N
+                    spawnOffset = new Vector3(0f, 0f, 7f); //N
                     break;
                 case 3:
-                    spawnOffset = this.transform.position + new Vector3(0f, 0f, -7f); //S
+                    spawnOffset = new Vector3(0f, 0f, -7f); //S
                     break;
                 case 4:
-                    spawnOffset = this.transform.position + new Vector3(7f, 0f, 7f); //NE
+                    spawnOffset = new Vector3(7f, 0f, 7f); //NE
                     break;
                 case 5:
-                    spawnOffset = this.transform.position + new Vector3(-7f, 0f, 7f); //NW
+                    spawnOffset = new Vector3(-7f, 0f, 7f); //NW
                     break;
                 case 6:
-                    spawnOffset = this.transform.position + new Vector3(7f, 0f, -7f); //SE
+                    spawnOffset = new Vector3(7f, 0f, -7f); //SE
                     break;
                 case 7:
-                    spawnOffset = this.transform.position + new Vector3(-7f, 0f, -7f); //SW
+                    spawnOffset = new Vector3(-7f, 0f, -7f); //SW
                     break;
                 default:
-                    spawnOffset = this.transform.position + new Vector3(7f, 0f, 0f);
+                    spawnOffset = new Vector3(0f, 0f, 0f); //Center
                     break;
             }
 
@@ -507,7 +570,7 @@ public class Etherborne : MonoBehaviour
         SetAttackStatus(false);
 
         yield return new WaitForSeconds(waitTime*2f);
-        TerminateSparks(sparks, 0.75f);
+        StartCoroutine(TerminateSparks(sparks, 0.75f));
     }
 
     private IEnumerator TerminateSparks(List<GameObject> sparks, float timeInterval)

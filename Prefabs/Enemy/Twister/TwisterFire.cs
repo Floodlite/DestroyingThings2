@@ -129,7 +129,9 @@ public class TwisterFire : MonoBehaviour
             return;
         }
 
-        Vector3 directionToPlayer = closestPlayer.transform.position - transform.position;
+        //Vector3 directionToPlayer = closestPlayer.transform.position - transform.position;
+        //Normalization should stop the projectile speed from varying based on the player's distance away from the enemy
+        Vector3 directionToPlayer = (closestPlayer.transform.position - transform.position).normalized;
         GameObject ball = Pooler.SpawnObject(projectile, transform.position + new Vector3(0f, 1f, 0f), Quaternion.identity, Pooler.PoolType.bullets);
         
         HurtBox hurtBox = ball.GetComponent<HurtBox>();
