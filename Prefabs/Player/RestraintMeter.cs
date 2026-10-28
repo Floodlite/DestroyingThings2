@@ -8,10 +8,10 @@ public class RestraintMeter : MonoBehaviour
    private int startingRestraint = 4;
 
    [SerializeField] private bool turboMode = false;
-   [SerializeField] private int turboJumpCost = 2;
+   [SerializeField] private int turboJumpCost = 3;
    [SerializeField] private int bonusJumpCost = 3;
-   [SerializeField] private int turboPunchCost = 4; //Adds extra punches
-   [SerializeField] private int turboHoofCost = 2;
+   [SerializeField] private int turboPunchCost = 3; //Adds extra punches
+   [SerializeField] private int turboHoofCost = 3;
    [SerializeField] private int turboChargeCost = 3;
 
    private bool debugMode = false;
