@@ -23,7 +23,7 @@ public class Etherborne : MonoBehaviour
 
     [SerializeField] private GameObject spark;
     [SerializeField] private GameObject sphere;
-    private Vector3 startScale;
+    [SerializeField] private Vector3 sphereStartScale;
     [SerializeField] private GameObject[] slash;
     [SerializeField] private WaveMaker summonsPool;
     private Player[] players;
@@ -53,13 +53,13 @@ public class Etherborne : MonoBehaviour
         idle=0,
         pursue=1,
         retreat=2,
+        slowed=3,
     }
     [SerializeField] private ChaseMode chaseMode = ChaseMode.idle;
     [SerializeField] private GameObject[] warpPoints;
 
     [SerializeField] private List<Reanimator> enemiesAlive = new List<Reanimator>();
     [SerializeField] private ConstructorConjunction constructors;
-    [SerializeField] private WaveMachine waveMachine;
     [SerializeField] private EnemyChase enemyChase;
     private float originalSpeed = 10f;
 
@@ -68,6 +68,7 @@ public class Etherborne : MonoBehaviour
     private int sparkDamage = 4;
     private int lightningDamage = 6;
     private EnemyHealth enemyHealth;
+    [SerializeField] private float enemySpawnDistance = 12f;
 
     [SerializeField] private SplineContainer splineContainer;
     [SerializeField] private Gradient lightningWarmupColor; //Transluscent blue
@@ -89,68 +90,83 @@ public class Etherborne : MonoBehaviour
     private void Start()
     {
         SetAttackStatus(false);
-        startScale = sphere.transform.localScale;
+        sphereStartScale = sphere.transform.localScale;
         originalSpeed = enemyChase.GetSpeed();
     }
 
     private void FixedUpdate()
     {
-        if(!attackInProgress) {
-            timeElapsed += Time.deltaTime;
+        if (attackInProgress)
+        {
+            return;
         }
 
-        if(!attackInProgress && timeElapsed >= cooldownTime)
+        timeElapsed += Time.deltaTime;
+
+        if (timeElapsed < cooldownTime)
         {
-            FindEnemiesAlive();
+            return;
+        }
 
-            SetAttackStatus(true);
-            timeElapsed = 0f;
-            //currentAttack = PickRandomAttack();
-            currentAttack = attackSequence[attackSequenceIndex];
+        timeElapsed = 0f;
 
-            attackSequenceIndex++;
-            if(attackSequenceIndex >= attackSequence.Count)
-            {
-                attackSequenceIndex = 0;
-                sequenceLength++;
-                CreateNewAttackSequence(sequenceLength);
-                cyclesElapsed++;
-            }
-    
+        FindEnemiesAlive();
 
+        if (attackSequenceIndex >= attackSequence.Count)
+        {
+            attackSequenceIndex = 0;
+            sequenceLength++;
+            CreateNewAttackSequence(sequenceLength);
+            cyclesElapsed++;
+        }
 
-            switch(currentAttack)
-            {
-                //TODO: Use dictionary for attack durations, maybe
-                case BossAttacks.idle:
-                    StartCoroutine(DoNothing(7f));
-                    attackDurationMultiplier += 0.1f;
-                    break;
-                case BossAttacks.wait:
-                    StartCoroutine(DoNothing(4f));
-                    break;
-                case BossAttacks.changeMovement:
-                    PickRandomChaseMode();
-                    break;
-                case BossAttacks.cableSlash:
-                    StartCoroutine(SlashWindup(1f, 2.5f, 15f, 5f*attackDurationMultiplier));
-                    break;
-                case BossAttacks.coreShock:
-                    StartCoroutine(CoreShock(sphere.transform.localScale.x, Mathf.Clamp(5f-0.15f*attackDurationMultiplier, 0.5f, 10f), 3f, 3f));
-                    break;
-                case BossAttacks.sparkSurge:
-                    StartCoroutine(SparksWindup(3f, 3+cyclesElapsed, 4f*attackDurationMultiplier));
-                    break;
-                case BossAttacks.foeLightning:
-                    StartCoroutine(LightningWindup(3f, 4f*attackDurationMultiplier, 4f));
-                    break;
-                case BossAttacks.warp:
-                    WarpElsewhere();
-                    break;
-                case BossAttacks.callBackup:
-                    CallBackup(3+cyclesElapsed);
-                    break;
-            }
+        currentAttack = attackSequence[attackSequenceIndex];
+        attackSequenceIndex++;
+
+        SetAttackStatus(true);
+        StartAttack(currentAttack);
+    }
+
+    private void StartAttack(BossAttacks attack)
+    {
+        switch (attack)
+        {
+            case BossAttacks.idle:
+                StartCoroutine(DoNothing(7f));
+                attackDurationMultiplier += 0.1f;
+                break;
+
+            case BossAttacks.wait:
+                StartCoroutine(DoNothing(1f));
+                break;
+
+            case BossAttacks.changeMovement:
+                StartCoroutine(ChangeMovementRoutine());
+                break;
+
+            case BossAttacks.cableSlash:
+                StartCoroutine(SlashWindup(1f, 2.5f, 10f, 5f * attackDurationMultiplier));
+                break;
+
+            case BossAttacks.coreShock:
+                StartCoroutine(CoreShock(1f, Mathf.Clamp(5f - 0.15f * attackDurationMultiplier, 0.5f, 10f), 3f, 3f));
+                break;
+
+            case BossAttacks.sparkSurge:
+                StartCoroutine(SparksWindup(3f, 3 + cyclesElapsed, 4f * attackDurationMultiplier));
+                break;
+
+            case BossAttacks.foeLightning:
+                StartCoroutine(LightningWindup(3f, 4f * attackDurationMultiplier, 4f));
+                break;
+
+            case BossAttacks.warp:
+                StartCoroutine(WarpRoutine());
+                break;
+
+            case BossAttacks.callBackup:
+                StartCoroutine(CallBackupRoutine(Mathf.Clamp(2 + cyclesElapsed, 1, 8)));
+                break;
         }
     }
 
@@ -159,30 +175,37 @@ public class Etherborne : MonoBehaviour
     ///</summary>
     private void PickRandomChaseMode()
     {
-        if(chaseMode == ChaseMode.idle)
+        int randy = UnityEngine.Random.Range(0, chaseModeCount);
+        ApplyChaseMode((ChaseMode)randy);
+    }
+
+    private void ApplyChaseMode(ChaseMode newMode)
+    {
+        chaseMode = newMode;
+
+        if (enemyChase == null)
         {
-            enemyChase.SetSpeed(originalSpeed); //Reset speed back to normal
+            return;
         }
 
-        enemyChase.ToggleRole();
-
-        int randy = UnityEngine.Random.Range(0, chaseModeCount);
-        chaseMode = (ChaseMode)randy;
-        
-        switch(chaseMode) {
+        switch (newMode)
+        {
             case ChaseMode.idle:
-                enemyChase.SetSpeed(originalSpeed/15f);
+                enemyChase.SetSpeed(originalSpeed / 15f);
                 enemyChase.SetChaseMode(EnemyChase.ChaseMode.pursue);
                 break;
+
             case ChaseMode.pursue:
+                enemyChase.SetSpeed(originalSpeed);
                 enemyChase.SetChaseMode(EnemyChase.ChaseMode.pursue);
                 break;
+
             case ChaseMode.retreat:
+                enemyChase.SetSpeed(originalSpeed);
                 enemyChase.SetChaseMode(EnemyChase.ChaseMode.retreat);
                 break;
         }
-
-        StartCoroutine(DoNothing(Mathf.Clamp(2f-0.1f*attackDurationMultiplier, 0.15f, 7.5f)));
+        //Do NOT call ToggleRole() again in this method and again in PickRandomChaseMode().
     }
 
     private void SetChaseMode(ChaseMode newChaseMode)
@@ -197,6 +220,10 @@ public class Etherborne : MonoBehaviour
         switch(newChaseMode) {
             case ChaseMode.idle:
                 enemyChase.SetSpeed(originalSpeed/15f);
+                enemyChase.SetChaseMode(EnemyChase.ChaseMode.pursue);
+                break;
+            case ChaseMode.slowed:
+                enemyChase.SetSpeed(originalSpeed/5f);
                 enemyChase.SetChaseMode(EnemyChase.ChaseMode.pursue);
                 break;
             case ChaseMode.pursue:
@@ -231,6 +258,27 @@ public class Etherborne : MonoBehaviour
         attackSequence.Add(BossAttacks.warp);
     }
 
+    private IEnumerator ChangeMovementRoutine()
+    {
+        PickRandomChaseMode();
+        yield return new WaitForSeconds(Mathf.Clamp(2f - 0.1f * attackDurationMultiplier, 0.15f, 7.5f));
+        SetAttackStatus(false);
+    }
+
+    private IEnumerator WarpRoutine()
+    {
+        WarpElsewhere();
+        yield return null;
+        SetAttackStatus(false);
+    }
+
+    private IEnumerator CallBackupRoutine(int spawnCount)
+    {
+        CallBackup(spawnCount);
+        yield return null;
+        SetAttackStatus(false);
+    }
+
     ///<summary>
     ///Does nothings
     ///</summary>
@@ -245,7 +293,7 @@ public class Etherborne : MonoBehaviour
     ///</summary>
     private IEnumerator LightningWindup(float windupTime, float attackDuration, float waitTime)
     {
-        SetChaseMode(ChaseMode.idle);
+        SetChaseMode(ChaseMode.slowed);
         yield return new WaitForSeconds(windupTime/4f);
         StartCoroutine(FoeLightning(windupTime, attackDuration, waitTime));
     }
@@ -360,6 +408,11 @@ public class Etherborne : MonoBehaviour
         }
 
         Vector3 directionToPlayer = closestPlayer.transform.position - transform.position;
+        if(directionToPlayer.sqrMagnitude > 0.0001f)
+        {
+            directionToPlayer = directionToPlayer.normalized;
+        }
+        
         GameObject ball = Pooler.SpawnObject(slash[slashIndex], transform.position + new Vector3(0f, 1f, 0f), Quaternion.identity, Pooler.PoolType.bullets);
         
         HurtBox hurtBox = ball.GetComponent<HurtBox>();
@@ -388,17 +441,34 @@ public class Etherborne : MonoBehaviour
     private IEnumerator LaunchSlash(GameObject projectile, Rigidbody rb, float waitTime, float slashDuration, float projectileSpeed, Vector3 directionToPlayer)
     {
         float scaleSpeedMultiplier = 1f;
-        float timeElapsed = 0f;
-        float timeInterval = slashDuration / 20f;
-        while(timeElapsed <= slashDuration)
+        float attackTimeElapsed = 0f;
+        float timeInterval = slashDuration / 5f;
+        Vector3 slashStartScale = projectile.transform.localScale;
+
+        /*
+        while(attackTimeElapsed <= slashDuration)
         {
             //Projectiles get larger and fly faster as they move
             rb.linearVelocity = directionToPlayer * projectileSpeed * scaleSpeedMultiplier;
             projectile.transform.localScale *= scaleSpeedMultiplier;
             yield return new WaitForSeconds(timeInterval);
-            timeElapsed += timeInterval;
+            attackTimeElapsed += timeInterval;
             scaleSpeedMultiplier += 0.15f;
         }
+        */
+
+        
+        while (attackTimeElapsed < slashDuration)
+        {
+            attackTimeElapsed += Time.deltaTime;
+            float time = Mathf.Clamp01(attackTimeElapsed / slashDuration);
+
+            rb.linearVelocity = directionToPlayer * projectileSpeed * scaleSpeedMultiplier;
+            projectile.transform.localScale = Vector3.Lerp(slashStartScale, slashStartScale*3f, time);
+            scaleSpeedMultiplier = Mathf.Lerp(1f, 5f, time);
+            yield return null;
+        }
+        
 
         Pooler.ReleaseObjectToPool(projectile);
         yield return new WaitForSeconds(waitTime);
@@ -430,22 +500,24 @@ public class Etherborne : MonoBehaviour
     }
 
     ///<summary>
-    ///Spawns a sphere, waits for it to grow to full size, activates its hurtboxes, and then despawns it
+    ///Spawn a sphere, wait for it to grow to full size, activate its hurtboxes, and despawn it
     ///</summary>
     private IEnumerator CoreShock(float targetSize, float armTime, float upTime, float waitTime)
     {
         GameObject spawnedSphere = Pooler.SpawnObject(sphere, transform.position, Quaternion.identity, Pooler.PoolType.bullets);
-        spawnedSphere.transform.localScale = new Vector3(1f, 1f, 1f);
+        spawnedSphere.transform.parent = this.gameObject.transform;
+        
+        spawnedSphere.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
         spawnedSphere.transform.rotation = UnityEngine.Random.rotation;
         ActivateHurtCollision(spawnedSphere, false);
 
-        Vector3 growSize = startScale * targetSize;
+        Vector3 growSize = sphereStartScale * targetSize;
         float attackTimeElapsed = 0f;
-        while (attackTimeElapsed < armTime) //Verify
+        while (attackTimeElapsed < armTime+2) //Verify
         {
             attackTimeElapsed += Time.deltaTime;
             float time = Mathf.Clamp01(attackTimeElapsed / armTime);
-            spawnedSphere.transform.localScale = Vector3.Lerp(startScale, growSize, time);
+            spawnedSphere.transform.localScale = Vector3.Lerp(sphereStartScale, growSize, time);
             yield return null;
         }
 
@@ -508,31 +580,31 @@ public class Etherborne : MonoBehaviour
             Vector3 spawnOffset;
             switch(i) {
                 case 0:
-                    spawnOffset = new Vector3(7f, 0f, 0f); //E
+                    spawnOffset = new Vector3(enemySpawnDistance, 0f, 0f); //E
                     break;  
                 case 1:
-                    spawnOffset = new Vector3(-7f, 0f, 0f); //W
+                    spawnOffset = new Vector3(-enemySpawnDistance, 0f, 0f); //W
                     break;
                 case 2:
-                    spawnOffset = new Vector3(0f, 0f, 7f); //N
+                    spawnOffset = new Vector3(0f, 0f, enemySpawnDistance); //N
                     break;
                 case 3:
-                    spawnOffset = new Vector3(0f, 0f, -7f); //S
+                    spawnOffset = new Vector3(0f, 0f, -enemySpawnDistance); //S
                     break;
                 case 4:
-                    spawnOffset = new Vector3(7f, 0f, 7f); //NE
+                    spawnOffset = new Vector3(enemySpawnDistance, 0f, enemySpawnDistance); //NE
                     break;
                 case 5:
-                    spawnOffset = new Vector3(-7f, 0f, 7f); //NW
+                    spawnOffset = new Vector3(-enemySpawnDistance, 0f, enemySpawnDistance); //NW
                     break;
                 case 6:
-                    spawnOffset = new Vector3(7f, 0f, -7f); //SE
+                    spawnOffset = new Vector3(enemySpawnDistance, 0f, -enemySpawnDistance); //SE
                     break;
                 case 7:
-                    spawnOffset = new Vector3(-7f, 0f, -7f); //SW
+                    spawnOffset = new Vector3(-enemySpawnDistance, 0f, -enemySpawnDistance); //SW
                     break;
                 default:
-                    spawnOffset = new Vector3(0f, 0f, 0f); //Center
+                    spawnOffset = new Vector3(0f, 0f, 1f); //Center
                     break;
             }
 
@@ -541,6 +613,7 @@ public class Etherborne : MonoBehaviour
             NavMeshAgent agent = spawnedEnemy.GetComponentInChildren<NavMeshAgent>();
             if(agent != null) { agent.Warp(spawnedEnemy.transform.position); }
             Reanimator reanimator = spawnedEnemy.GetComponent<Reanimator>();
+            if(reanimator == null) { reanimator = spawnedEnemy.GetComponentInChildren<Reanimator>(); }
             reanimator.SetResStatus(true);
         }
         SetAttackStatus(false);

@@ -4,7 +4,7 @@ public class SparkMove : MonoBehaviour
 {
     [SerializeField] private GameObject boundEnemy;
     [SerializeField] private float timeElapsed = 0f;
-    [SerializeField] private float waitTime = 3f;
+    [SerializeField] private float waitTime = 8f;
     [SerializeField] private float moveSpeed = 7f;
     [SerializeField] private bool boundToEnemy = false;
     [SerializeField] private Vector3 enemyLocation;
@@ -19,11 +19,12 @@ public class SparkMove : MonoBehaviour
         }
 
         if(boundToEnemy) {
-            this.transform.position = boundEnemy.gameObject.transform.position;
+            this.transform.parent = boundEnemy.transform.parent;
         }
         timeElapsed += Time.deltaTime;
-        if(timeElapsed > 0f && timeElapsed % waitTime == 0f) //Move to new enemy
+        if(timeElapsed > 0f && timeElapsed >= waitTime) //Move to new enemy
         {
+            timeElapsed = 0f;
             boundToEnemy = false;
             //boundEnemy = FindClosestEnemy().transform.parent.gameObject;
             boundEnemy = ChooseRandomEnemy().transform.parent.gameObject;
@@ -35,9 +36,9 @@ public class SparkMove : MonoBehaviour
 
     private void MoveToEnemy()
     {
-        while(Mathf.Abs(transform.position.sqrMagnitude - boundEnemy.transform.position.sqrMagnitude) >= 2f)
+        while(Mathf.Abs(transform.position.sqrMagnitude - enemyLocation.sqrMagnitude) >= 2f)
         {
-            this.transform.Translate(transform.position-boundEnemy.transform.position * moveSpeed);
+            this.transform.Translate((transform.position-enemyLocation).normalized * moveSpeed);
         }
     }
 
@@ -84,8 +85,4 @@ public class SparkMove : MonoBehaviour
         }
         return null;
     }
-
-
-
-
 }

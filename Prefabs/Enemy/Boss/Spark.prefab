@@ -254,6 +254,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HurtBox
   constructors: {fileID: 0}
   enemyHealth: {fileID: 0}
+  damage: 0
 --- !u!1 &2486119418420227213
 GameObject:
   m_ObjectHideFlags: 0
@@ -5441,7 +5442,7 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 1, b: 1, a: 1}
+      key0: {r: 0, g: 0.9033842, b: 1, a: 1}
       key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 1, g: 1, b: 1, a: 1}
       key3: {r: 1, g: 1, b: 1, a: 1}
@@ -5450,9 +5451,9 @@ TrailRenderer:
       key6: {r: 0, g: 0, b: 0, a: 0}
       key7: {r: 0, g: 0, b: 0, a: 0}
       ctime0: 0
-      ctime1: 16384
-      ctime2: 32768
-      ctime3: 49151
+      ctime1: 49151
+      ctime2: 65535
+      ctime3: 65535
       ctime4: 65535
       ctime5: 0
       ctime6: 0
@@ -5466,8 +5467,8 @@ TrailRenderer:
       atime6: 0
       atime7: 0
       m_Mode: 0
-      m_ColorSpace: -1
-      m_NumColorKeys: 5
+      m_ColorSpace: 0
+      m_NumColorKeys: 3
       m_NumAlphaKeys: 5
     numCornerVertices: 0
     numCapVertices: 0
