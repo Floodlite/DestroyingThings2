@@ -13,8 +13,8 @@ public class Etherborne : MonoBehaviour
         wait=1, //Done
         warp=2, //Done
         changeMovement=3, //Done
-        cableSlash=4, //Done
-        callBackup=5, //Done
+        callBackup=4, //Done
+        cableSlash=5, //Done
         coreShock=6, //Done
         sparkSurge=7, //Done?
         foeLightning=8, //Pending
@@ -47,6 +47,7 @@ public class Etherborne : MonoBehaviour
     [SerializeField] private int cyclesElapsed = 0;
     private int attackOptionCount = 9;
     private int chaseModeCount = 3;
+    [SerializeField] private bool testMode = false;
 
     private enum ChaseMode
     {
@@ -70,10 +71,14 @@ public class Etherborne : MonoBehaviour
     private EnemyHealth enemyHealth;
     [SerializeField] private float enemySpawnDistance = 12f;
 
+    [SerializeField] private Spline spline;
     [SerializeField] private SplineContainer splineContainer;
     [SerializeField] private Gradient lightningWarmupColor; //Transluscent blue
     [SerializeField] private Gradient lightningActiveColor; //Neon cyan
+    [SerializeField] private Material lineRendererTexture;
     [SerializeField] private GameObject lightningSpark;
+    [SerializeField] private GameObject spliney; //Assign in inspector
+    [SerializeField] private GameObject liney; //Assign in inspector
     
 
     private void Awake()
@@ -81,7 +86,6 @@ public class Etherborne : MonoBehaviour
         constructors = GetComponent<ConstructorConjunction>();
         enemyChase = GetComponent<EnemyChase>();
         enemyHealth = GetComponent<EnemyHealth>();
-        splineContainer = GetComponent<SplineContainer>();
         attackOptionCount = Enum.GetNames(typeof(BossAttacks)).Length;
         chaseModeCount = Enum.GetNames(typeof(ChaseMode)).Length;
         CreateNewAttackSequence(sequenceLength);
@@ -92,6 +96,7 @@ public class Etherborne : MonoBehaviour
         SetAttackStatus(false);
         sphereStartScale = sphere.transform.localScale;
         originalSpeed = enemyChase.GetSpeed();
+        warpPoints = GameObject.FindGameObjectsWithTag("Boss Warp");
     }
 
     private void FixedUpdate()
@@ -157,7 +162,7 @@ public class Etherborne : MonoBehaviour
                 break;
 
             case BossAttacks.foeLightning:
-                StartCoroutine(LightningWindup(3f, 4f * attackDurationMultiplier, 4f));
+                StartCoroutine(LightningWindup(2.75f, 6f * attackDurationMultiplier, 4f));
                 break;
 
             case BossAttacks.warp:
@@ -208,35 +213,6 @@ public class Etherborne : MonoBehaviour
         //Do NOT call ToggleRole() again in this method and again in PickRandomChaseMode().
     }
 
-    private void SetChaseMode(ChaseMode newChaseMode)
-    {
-        chaseMode = newChaseMode;
-
-        if(chaseMode == ChaseMode.idle)
-        {
-            enemyChase.SetSpeed(originalSpeed); //Reset speed back to normal
-        }
-        
-        switch(newChaseMode) {
-            case ChaseMode.idle:
-                enemyChase.SetSpeed(originalSpeed/15f);
-                enemyChase.SetChaseMode(EnemyChase.ChaseMode.pursue);
-                break;
-            case ChaseMode.slowed:
-                enemyChase.SetSpeed(originalSpeed/5f);
-                enemyChase.SetChaseMode(EnemyChase.ChaseMode.pursue);
-                break;
-            case ChaseMode.pursue:
-                enemyChase.SetChaseMode(EnemyChase.ChaseMode.pursue);
-                break;
-            case ChaseMode.retreat:
-                enemyChase.SetChaseMode(EnemyChase.ChaseMode.retreat);
-                break;
-        }
-
-        if(enemyChase != null) { enemyChase.ToggleRole(); }
-    }
-
     ///<summary>
     ///Reshuffles the boss' attack order
     ///</summary>
@@ -246,6 +222,14 @@ public class Etherborne : MonoBehaviour
         attackSequence.Add(BossAttacks.idle);
         if(enemiesAlive.Count <= 6) { attackSequence.Add(BossAttacks.callBackup); }
         
+        if(testMode)
+        {
+            attackSequence.Add(superAttack);
+            attackSequence.Add(BossAttacks.cableSlash);
+            attackSequence.Add(BossAttacks.sparkSurge);
+            attackSequence.Add(BossAttacks.warp);
+        }
+
         for(int i=0; i<length; i++)
         {
             int randy = UnityEngine.Random.Range(4, attackOptionCount-1);
@@ -268,14 +252,16 @@ public class Etherborne : MonoBehaviour
     private IEnumerator WarpRoutine()
     {
         WarpElsewhere();
-        yield return null;
+        //yield return null;
+        yield return new WaitForSeconds(0.1f);
         SetAttackStatus(false);
     }
 
     private IEnumerator CallBackupRoutine(int spawnCount)
     {
         CallBackup(spawnCount);
-        yield return null;
+        //yield return null;
+        yield return new WaitForSeconds(0.1f);
         SetAttackStatus(false);
     }
 
@@ -293,13 +279,19 @@ public class Etherborne : MonoBehaviour
     ///</summary>
     private IEnumerator LightningWindup(float windupTime, float attackDuration, float waitTime)
     {
-        SetChaseMode(ChaseMode.slowed);
+        ApplyChaseMode(ChaseMode.slowed);
         yield return new WaitForSeconds(windupTime/4f);
         StartCoroutine(FoeLightning(windupTime, attackDuration, waitTime));
     }
 
     private IEnumerator FoeLightning(float armTime, float attackDuration, float waitTime)
     {
+        //Do not have the component be directly attached to the boss, as it will keep moving and rotating
+        GameObject splineContainerObject = Pooler.SpawnObject(spliney, this.transform.position, Quaternion.identity, Pooler.PoolType.splines);
+        splineContainer = splineContainerObject.GetComponent<SplineContainer>();
+
+        Pooler.SpawnObject(liney, this.transform.position, Quaternion.identity, Pooler.PoolType.splines);
+
         yield return new WaitForSeconds(attackDuration);
         /*Draws a line connecting each enemy
         * Create a spline
@@ -308,18 +300,27 @@ public class Etherborne : MonoBehaviour
         * Have damaging projectiles move at very high speeds along the spline
         */
         int knotCapacity = enemiesAlive.Count+2; //First and last will be the boss
+        
+        //TODO: Also add spark marks for knot locations
+        SparkMove[] sparksActive = FindObjectsByType<SparkMove>(FindObjectsSortMode.InstanceID);
+        bool useSparks = false;
+        if(sparksActive != null) 
+        {
+            useSparks = true;
+            knotCapacity += sparksActive.Length;
+        }
 
 
         //Line renderer configs
         //May cause hefty performance drops
-        LineRenderer lineRenderer = this.gameObject.AddComponent<LineRenderer>();
+        LineRenderer lineRenderer = liney.gameObject.GetComponent<LineRenderer>();
         lineRenderer.startWidth = 0.6f;
         lineRenderer.endWidth = 0.6f;
         lineRenderer.colorGradient = lightningWarmupColor;
         lineRenderer.positionCount = knotCapacity;
-        lineRenderer.material = new Material(Shader.Find("Sprites/Default")); //Placeholder
+        lineRenderer.material = lineRendererTexture;
 
-        Spline spline = new Spline(knotCapacity, false);
+        spline = new Spline(knotCapacity, false);
         spline.Add(this.transform.position); //First knot
         lineRenderer.SetPosition(0, this.transform.position);
 
@@ -327,14 +328,26 @@ public class Etherborne : MonoBehaviour
         foreach(Reanimator enemy in enemiesAlive)
         {
             if(enemy == null) { continue; }
-            float3 position = enemy.transform.parent.gameObject.transform.position;
+            float3 position;
+            EnemyHealth enemyHealth = enemy.GetComponentInChildren<EnemyHealth>();
+            if(enemyHealth != null) { position = enemyHealth.transform.position; }
+            else { position = enemy.transform.position; }
             spline.Add(position);
 
             lineRenderer.SetPosition(knotIndex, position);
+
+            if(useSparks && knotIndex < sparksActive.Length)
+            {
+                position = sparksActive[knotIndex].transform.position;
+                spline.Add(position);
+                lineRenderer.SetPosition(knotIndex, position);
+            }
+
             knotIndex++;
         }
 
         //Reset spline in spline container
+        splineContainer = splineContainerObject.GetComponent<SplineContainer>();
         Spline currentSpline = splineContainer.Spline;
         if(currentSpline != null)
         {
@@ -365,6 +378,7 @@ public class Etherborne : MonoBehaviour
 
             MoveAlongSpline splineMove = ball.GetComponentInChildren<MoveAlongSpline>();
             splineMove.ChangeSpline(splineContainer);
+            splineMove.ChangeSpeed(splineMove.GetSpeed()*50f*(1+0.25f*i));
 
             electrons.Add(ball);
             yield return new WaitForSeconds(0.01f);
@@ -413,7 +427,7 @@ public class Etherborne : MonoBehaviour
             directionToPlayer = directionToPlayer.normalized;
         }
         
-        GameObject ball = Pooler.SpawnObject(slash[slashIndex], transform.position + new Vector3(0f, 1f, 0f), Quaternion.identity, Pooler.PoolType.bullets);
+        GameObject ball = Pooler.SpawnObject(slash[slashIndex], transform.position + new Vector3(0f, 0f, 0f), Quaternion.identity, Pooler.PoolType.bullets);
         
         HurtBox hurtBox = ball.GetComponent<HurtBox>();
         if(hurtBox != null)
@@ -562,8 +576,9 @@ public class Etherborne : MonoBehaviour
             return; 
         }
         int randy = UnityEngine.Random.Range(0, warpPoints.Length);
-        this.transform.parent.transform.position = warpPoints[randy].transform.position;
-        if(enemyChase != null) { enemyChase.WarpToNavMesh(); }
+        Vector3 targetPosition = warpPoints[randy].transform.position;
+        this.transform.position = targetPosition;
+        if(enemyChase != null) { enemyChase.WarpToNavMesh(targetPosition); }
         SetAttackStatus(false);
     }
 
@@ -574,9 +589,6 @@ public class Etherborne : MonoBehaviour
     {
         for(int i=0; i<spawnCount; i++)
         {
-            int randy = UnityEngine.Random.Range(0, summonsPool.GetLength());
-            GameObject chosenEnemy = summonsPool.GetPool()[randy];
-
             Vector3 spawnOffset;
             switch(i) {
                 case 0:
@@ -608,13 +620,50 @@ public class Etherborne : MonoBehaviour
                     break;
             }
 
+            if(summonsPool == null)
+            {
+                Debug.LogError("summonsPool is null! Deal with that!");
+                SetAttackStatus(false);
+                return;
+            }
+
+            if(summonsPool.GetLength() <= 0)
+            {
+                Debug.LogError("summonsPool has no entries. Disappointing.");
+                SetAttackStatus(false);
+                return;
+            }
+
+            int randy = UnityEngine.Random.Range(0, summonsPool.GetLength());
+            GameObject chosenEnemy = summonsPool.GetPool()[randy];
+
+            if (chosenEnemy == null)
+            {
+                Debug.LogWarning("Null enemy prefab found in pool at index " + randy);
+                continue;
+            }
+
             GameObject spawnedEnemy = Pooler.SpawnObject(chosenEnemy, this.transform.position + spawnOffset, Quaternion.identity, Pooler.PoolType.spawnedEnemies);
-            if(spawnedEnemy == null) { continue; }
-            NavMeshAgent agent = spawnedEnemy.GetComponentInChildren<NavMeshAgent>();
-            if(agent != null) { agent.Warp(spawnedEnemy.transform.position); }
-            Reanimator reanimator = spawnedEnemy.GetComponent<Reanimator>();
-            if(reanimator == null) { reanimator = spawnedEnemy.GetComponentInChildren<Reanimator>(); }
+            if (spawnedEnemy == null)
+            {
+                Debug.LogWarning("SpawnObject returned null for " + chosenEnemy.name);
+                continue;
+            }
+
+            Reanimator reanimator = spawnedEnemy.GetComponentInChildren<Reanimator>(true);
+            if (reanimator == null)
+            {
+                Debug.LogError("Spawned enemy missing Reanimator: " + spawnedEnemy.name);
+                continue;
+            }
+
             reanimator.SetResStatus(true);
+
+            NavMeshAgent agent = spawnedEnemy.GetComponentInChildren<NavMeshAgent>();
+            if(agent != null) {
+                agent.Warp(spawnedEnemy.transform.position); 
+                enemyChase.PlaceAgentOnNavMesh();
+            }
         }
         SetAttackStatus(false);
     }
